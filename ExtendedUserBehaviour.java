@@ -13,7 +13,7 @@ public class ExtendedUserBehaviour extends UserBehaviour {
         addMyCommand("hug", 1, (args, target) -> c.hugUser(target, args[0]), null);
         addMyCommand("stab", 1, (args, target) -> c.stabUser(target, args[0]), null);
         addMyCommand("appear", 0, (args, target) -> m.tellRoom("Chasidy appears!"), null);
-        addMyCommand("magic", 0, (args, target) -> m.tellRoom("Chasidy prepares the Path of Exile card!"), null);
+        addMyCommand("magic", 0, (args, target) -> m.tellRoom("Chasidy prepares the Path to Exile card!"), null);
         
         super.addAll();
         
