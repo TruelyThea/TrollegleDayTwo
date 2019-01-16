@@ -1,8 +1,5 @@
 package anon.trollegle;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import java.lang.NumberFormatException;
 import java.lang.String;
 import java.util.ArrayList;
@@ -12,6 +9,7 @@ import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.function.Predicate; 
 import java.util.function.Function; 
+import java.util.function.BiFunction;
 import java.lang.IllegalArgumentException;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
@@ -20,7 +18,7 @@ import java.util.regex.Matcher;
 import java.util.Iterator;
 
 import java.io.*;
-import java.util.Arrays;//important
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,20 +30,14 @@ import static anon.trollegle.Util.t;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ExtendedAdminCommands extends AdminCommands {
-  
-    private Timer timer = null;
-    private Timer findNew = null;
-    private String headlines[] = null;
+public class ExtendedAdminCommands extends AdminCommands {//tell, do, say?, {NAMES... }
     
-    private ArrayList<Timer> intervals = new ArrayList<Timer>();
-    private Hashtable<Integer, String> intervalCommands = new Hashtable<Integer, String>();
-
-    private ArrayList<Timer> defers = new ArrayList<Timer>();
-    private Hashtable<Integer, String> deferCommands = new Hashtable<Integer, String>();
+    private TimerStuff timer = new TimerStuff(m);
     
-    private Hashtable<String, Predicate<MultiUser>> labels = new Hashtable<String, Predicate<MultiUser>>();
+    private Polish<MultiUser> labels = new Polish<MultiUser>();
+    
     private Hashtable<String, Function<MultiUser, String>> values = new Hashtable<String, Function<MultiUser, String>>();
+    private Hashtable<String, BiFunction<MultiUser, String[], String>> funs = new Hashtable<String, BiFunction<MultiUser, String[], String>>();
     
     private Hashtable<String, String> addedCommands = new Hashtable<String, String>();
     private Hashtable<String, String> addedLabels = new Hashtable<String, String>();
@@ -122,7 +114,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         values.put("isInformed", p -> "" + p.isInformed());
         values.put("isLurker", p -> "" + p.isLurker());
        
-       
+        funs.put("choose", (p, args) -> args[(int) Math.floor(Math.random()*(double)args.length)]);
     }
     
     protected void addAll() {
@@ -138,34 +130,34 @@ public class ExtendedAdminCommands extends AdminCommands {
                 
         addCommand("defer", "defer TIME [command]", "Waits TIME before executing [command]. (Thea)", 2,
                 (args, target) -> {
-                    makeTimer(args, target, defers, deferCommands, "defer", 0, 250);
+                    timer.makeDefer(args, target);
                 }, "delay", "setdefer");
                 
         addCommand("defers", "defers", "List the currently scheduled defers with their ids. (Thea)", 0,
                 (args, target) -> {
-                    listTimers(target, defers, deferCommands, "defer");
+                    timer.listDefers(target);
                 }, "listdefers");
         
         addCommand("canceldefer", "canceldefer id", "Cancels the defer at id if given, or all the defers if not. (Thea)", 0,
                 (args, target) -> {
-                    cancelTimers(args, target, defers, "defer");
-                }, "canceldefers");
+                    timer.cancelDefers(args, target);
+                }, "canceldefers", "cleardefer", "cleardefers");
         
         addCommand("interval", "interval TIME [command]", "Repeats [command] every TIME ms. (Thea)", 2,
                 (args, target) -> {
-                    makeTimer(args, target, intervals, intervalCommands, "interval", 250, 0);
+                    timer.makeInterval(args, target);
                 }, "setinterval", "int");
         
         // Remembering all the interval id's can become hard, so you can call /.intervals to see them.
         addCommand("intervals", "intervals", "List currently scheduled intervals with their ids. (Thea)", 0,
                 (args, target) -> {
-                    listTimers(target, intervals, intervalCommands, "interval");
+                    timer.listIntervals(target);
                 }, "listintervals");
                 
         addCommand("cancelinterval", "cancelinterval id", "Cancels the interval at id if given, or all the intervals if not. (Thea)", 0,
                 (args, target) -> {
-                    cancelTimers(args, target, intervals, "interval");
-                }, "cancelintervals");
+                    timer.cancelIntervals(args, target);
+                }, "cancelintervals", "clearinterval", "clearintervals");
         
         addCommand("repeat", "repeat TIMES [command]", "Repeats [command] TIMES times. (Thea)", 2,
                 (args, target) -> {
@@ -184,15 +176,15 @@ public class ExtendedAdminCommands extends AdminCommands {
                     target.schedTell("Completed the repetition");
                 }, "rep");
         
-        addCommand("addcommand", "addcommand COMMAND [command]", "Makes the zero-argument command available for easy calling. Use the /. or /! notation. (Thea)", 2,
+        addCommand("addcommand", "addcommand COMMAND [command]", "Makes the initial segment of a command available for easy calling. This may be the entire command or may be a proper initial segment that accepts arguments. Use the /. or /! notation. (Thea)", 2,
                 (args, target) -> {
                     final String command = argsToString(1, args);
                     String name = args[0].toLowerCase(Locale.ROOT);
                     
                     if ((commands.get(name) == null && aliases.get(name) == null) || addedCommands.get(name) != null) {
                       addedCommands.put(name, command);
-                      addCommand(name, null, null, 0, (__, innertarget) -> {
-                        m.command(innertarget, command);
+                      addCommand(name, null, null, 0, (innerargs, innertarget) -> {
+                        m.command(innertarget, command + " " + argsToString(0, innerargs));
                       });
                       target.schedTell("Command added.");
                     } else
@@ -203,6 +195,34 @@ public class ExtendedAdminCommands extends AdminCommands {
                 (args, target) -> {
                     listHashTable(target, addedCommands, "command");
                 }, "listcommands");
+        
+        
+        // The following three commands are duplicated from ExtendedUserBehavior.java to allow both the /!command and /command notations.
+        // The comments are presented only here.
+        
+        // This command relays the phrase to yourself, and is an abbreviation of /.annpm SELF [phrase].
+        // This is useful for sending yourself another user's properties, as obtained via /.with or /.allwho.
+        // It's also necessary inside a /.with or /.allwho block within a command added via /.addcommand because you can't hard code the caller's id.
+        addCommand("tell", "tell [phrase]", "This command relays the phrase to the caller. You can also use /tell. (Thea)", 1,
+                (args, target) -> {
+                    m.annPrivate(target, target.getNumber() + "", argsToString(0, args));
+                }, "relay", "inform");
+                
+        // This command is useful for wrapping commands and phrases, most notably making a user say a regular phrase in /.simulate USER.
+        addCommand("do", "do [command/phrase]", "This command has the caller perform the command or say the phrase. You can also use /do. (Thea)", 1,
+                (args, target) -> {
+                    m.hear(target, argsToString(0, args));
+                }, "perform", "doperform");
+        
+        // This is useful for allowing a simulation of a normal message in /.simulate 
+        // or for saying messages that would otherwise be interpreted as a command.
+        addCommand("say", "say [phrase]", "This command has the caller say the phrase, regardless of wheter it looks like a command. You can also use /say. (Thea)", 1,
+                (args, target) -> {
+                    String data = argsToString(0, args);
+                    m.relay("normal", target, data);
+                    // maybe TODO: if target is muted, relay the data to verbose admins, ... 
+                    // (although they'll already see the command); I haven't implemented this because the showVerbose variable in Multi.java
+                }, "dosay");
         
         // This command queries all users selected by the LABAL predicate, 
         // then performs the command on each with $[values] replaced by the selected users' properties.
@@ -218,7 +238,7 @@ public class ExtendedAdminCommands extends AdminCommands {
                   perform(target, pred, commands);
                   
                   target.schedTell("All done.");
-                }, "all");
+                }, "all", "filter");
         
         // This command queries the user(s) with USER nick or number, 
         // then performs the command with $[values] replaced by the selected users' properties
@@ -226,12 +246,29 @@ public class ExtendedAdminCommands extends AdminCommands {
         //   (1) Do a command after substituting another user's properties
         // Since all $[values] are replaced immediately, 
         //   (2) you can prepend a /.with USER to a /.allwho or /.simulate to get another user's properties.
-        addCommand("with", "with USER [command]", "Does the command with USER; you are still the target (caller). In [command], use $[value] to get a value of the USER. (Thea)", 2,
+        addCommand("with", "with USER... [command]", "Does the command with every USER; you are still the target (caller). In [command], use $[value] to get a value of the USER. (Thea)", 2,
                 (args, target) -> {
-                  Predicate<MultiUser> pred = p -> (("" + p.getNumber()).equals(args[0]) || p.getNick().equals(args[0]));
-                  String commands = argsToString(1, args);
+                  // find the index of the command so we can perform it with each user before it
+                  int command = 1;
+                  for (command = 1; command < args.length; command++)
+                    if (args[command].indexOf("/") == 0)
+                      break;
+                  // defaults to one USER and the command starts on the second arg
+                  if (command == args.length) command = 1;
                   
-                  perform(target, pred, commands);
+                  final int loc = command;
+                  
+                  String commands = argsToString(command, args);
+                  
+                  Predicate<MultiUser> recipients = p -> {
+                    for (int i = 0; i < loc; i++) {
+                      if (("" + p.getNumber()).equals(args[i]) || p.getNick().equals(args[i])) return true;
+                    }
+                    
+                    return false;
+                  };
+                  
+                  perform(target, recipients, commands);
                   
                   target.schedTell("All done.");
                 });
@@ -254,13 +291,13 @@ public class ExtendedAdminCommands extends AdminCommands {
         addCommand("setlabel", "setlabel LABEL [Polish]", "Use existing labels, !, ||, &&, ->, and <-> as symbols. (Thea)", 2,
                 (args, target) -> {
                   try {
-                    labels.put(args[0], makeCondition(Arrays.copyOfRange(args, 1, args.length)));
+                    labels.put(args[0], Arrays.copyOfRange(args, 1, args.length));
                     addedLabels.put(args[0], argsToString(1, args));
                     target.schedTell("Label Added.");
                   } catch (IllegalArgumentException e) {
                     target.schedTell("There was a problem parsing your label: " + e.getMessage());
                   }
-                }, "label");
+                }, "label", "addlabel");
                 
         addCommand("labels", "labels", "Lists all of the labels that admins have added. (Thea)", 0,
                 (args, target) -> {
@@ -269,7 +306,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         
         addCommand("labelhelp", "labelhelp", "spells out the documentation for labels. (Thea)", 0,
                 (args, target) -> {
-                  Enumeration<String> enumer = labels.keys();
+                  Enumeration<String> enumer = labels.tokens();
                   String listPred = enumer.nextElement();
                   while (enumer.hasMoreElements()) listPred = listPred + ", " + enumer.nextElement();
                   
@@ -277,10 +314,14 @@ public class ExtendedAdminCommands extends AdminCommands {
                   String listVal = val.nextElement();
                   while (val.hasMoreElements()) listVal = listVal + ", " + val.nextElement();
                   
+                  val = funs.keys();
+                  String listFuns = val.nextElement();
+                  while (val.hasMoreElements()) listFuns = listFuns + ", " + val.nextElement();
                   
                   target.schedTell("Here are some docs: \r\n"
                         + "The available labels are " + listPred + ", \r\n\r\n" 
-                        + "and the values available are " + listVal + ".\r\n\r\n" 
+                        + "the values available are " + listVal + ",\r\n\r\n" 
+                        + "and the functions available are " + listFuns + ".\r\n\r\n"
                         + "Polish notation for labels is also known as prefix notation because all operators are listed before their operands. "
                         + "This notation allows complete ommision of commas and parentheses. In fact, they aren't allowed here. Read more here https://en.wikipedia.org/wiki/Polish_notation.\r\n"
                         + "For example, you may write \"/.setlabel label || ! doesShowNumbers && isAdmin isVerbose\" for (!doesShowNumbers) || (isAdmin && isVerbose). \r\n\r\n" 
@@ -294,99 +335,26 @@ public class ExtendedAdminCommands extends AdminCommands {
         sanityCheck();
     }
     
-    // This method is used to recursively build up Predicates with the meaning given by the expression args.
-    // In other words, it parses a Polish expression and returns the associated Predicate Function.
-    // See https://en.wikipedia.org/wiki/Polish_notation
-    // We use Polish notation because it's simple to parse, and doesn't require parentheses or commas.
-    // ...like I'm going to write an infix parser, no way! :P
-    // These Predicates are used as selectors in queries and values in $[]'s.
-    private Predicate<MultiUser> makeCondition(String[] args) throws IllegalArgumentException { // Polish parser
-      // this code checks that the expression is well-formed
-      if (count(args) != -1) throw new IllegalArgumentException("not well formed");
-      for (int i = 0; i < args.length - 1; i++) 
-        if (count(Arrays.copyOfRange(args, 0, i)) < 0) throw new IllegalArgumentException("not well formed");
-      
-      // this code recursively parses the expression
-      // TODO: Isolate this in a helper method so the above check doesn't run each time.
-      if (labels.get(args[0]) != null) 
-        return labels.get(args[0]);
-      // A mathematical theorem for Polish notation says that at each position there is one and only one subexpression.
-      // We choose the terms s.t. the above condition holds, so they are subexpressions
-      // This implies that they are *the* subexpressions that we need to parse.
-      if (args[0].equals("!")) {
-        String[] term1 = Arrays.copyOfRange(args, 1, args.length);
-        return makeCondition(term1).negate();
-      }
-      // I wanted to make a helper method to isolate the code for parsing expressions p Tau Rho with p binary, 
-      // but Java is so hard. :/ Hence why this form is repeated four times.
-      if (args[0].equals("&&")) {
-        int i = 2;
-        String[] term1 = Arrays.copyOfRange(args, 1, i);
-        while (count(term1) >= 0) {
-          i++;
-          term1 = Arrays.copyOfRange(args, 1, i);
-        }
-        String[] term2 = Arrays.copyOfRange(args, i, args.length);
-        return makeCondition(term1).and(makeCondition(term2));
-      }
-      if (args[0].equals("||")) {
-        int i = 2;
-        String[] term1 = Arrays.copyOfRange(args, 1, i);
-        while (count(term1) >= 0) {
-          i++;
-          term1 = Arrays.copyOfRange(args, 1, i);
-        }
-        String[] term2 = Arrays.copyOfRange(args, i, args.length);
-        return makeCondition(term1).or(makeCondition(term2));
-      }
-      if (args[0].equals("->")) {
-        int i = 2;
-        String[] term1 = Arrays.copyOfRange(args, 1, i);
-        while (count(term1) >= 0) {
-          i++;
-          term1 = Arrays.copyOfRange(args, 1, i);
-        }
-        String[] term2 = Arrays.copyOfRange(args, i, args.length);
-        return (makeCondition(term1).negate()).or(makeCondition(term2));
-      }
-      if (args[0].equals("<->")) {
-        int i = 2;
-        String[] term1 = Arrays.copyOfRange(args, 1, i);
-        while (count(term1) >= 0) {
-          i++;
-          term1 = Arrays.copyOfRange(args, 1, i);
-        }
-        String[] term2 = Arrays.copyOfRange(args, i, args.length);
-        return (makeCondition(term1).negate().and(makeCondition(term2).negate())).or(makeCondition(term1).and(makeCondition(term2)));
-      }
-      throw new IllegalArgumentException("this will never throw, hopefully");
-    }
-    
-    // This helper method is used to check whether a Polish expression is well-formed.
-    // A mathematical theorem says an expression Tau is well formed if and only if 
-    // count(Tau) = -1 and count(Rho) >= 0 for each proper initial segment of Tau.
-    private int count(String[] args) throws IllegalArgumentException {
-      int count = 0;
-      for (int i = 0; i < args.length; i ++) {
-        if (args[i].equals("||") || args[i].equals("&&")  || args[i].equals("<->")  || args[i].equals("->")) count += 2-1;
-        else if (args[i].equals("!")) count += 1-1;
-        else if (labels.get(args[i]) != null) count += 0-1;
-        else throw new IllegalArgumentException("unknown token `" + args[i] + "'");
-      }
-      return count;
-    }
-    
     // This method has source perform commands after replacing $[value]'s with recipient's properties.
     private void perform(MultiUser source, MultiUser recipient, String commands) {
           String uCommands = commands;
           
-          Pattern p = Pattern.compile("\\$\\[(\\w+)\\]");
+          String find = "\\$\\[(\\w+)([^\\]]*)\\]";
+          Pattern p = Pattern.compile(find); // \\$\\[(\\w+)\\]
           Matcher match = p.matcher(uCommands);
           
           while (match.find()) {
             String property = match.group(1);
-            Function<MultiUser, String> f = values.get(property);
-            uCommands = uCommands.replaceFirst("\\$\\[(\\w+)\\]", f != null ? f.apply(recipient) : "");
+            Function<MultiUser, String> prop = values.get(property);
+            if (prop != null) {
+              uCommands = uCommands.replaceFirst(find, prop.apply(recipient));
+            } else {
+              BiFunction<MultiUser, String[], String> fun = funs.get(property);
+              // TODO: split after substring from length of first match to \\s+
+              String[] args = match.group(2).substring(1).split("\\s+");
+              // System.out.println(args[0] + " " + match.group(2));
+              uCommands = uCommands.replaceFirst(find, fun != null ? fun.apply(recipient, args) : "");
+            }
             match = p.matcher(uCommands);
           }
           
@@ -416,86 +384,6 @@ public class ExtendedAdminCommands extends AdminCommands {
                 if (target.test(u)) perform(u, u, commands);
             }
         }
-    }
-    
-    void makeTimer(String[] args, MultiUser target, ArrayList<Timer> timers, Hashtable<Integer, String> commandTable, String type, int minTime, int minTellTime) {
-        String commands = argsToString(1, args);
-        int time = 0;
-        try {
-          time = Integer.parseInt(args[0]);
-        } catch (NumberFormatException e) {
-          target.schedTell("invalid integer argument for TIMES");
-          return;
-        }
-        
-        if (time < minTime) {
-          target.schedTell("Not scheduling the " + type + ": TIME < 0ms.");
-          return;
-        }
-        
-        // So we can later cancel the timer.
-        Timer timer = new Timer();
-        int i = timers.indexOf(null);
-        // Reuse the index so timers doesn't grow needlessly
-        if (i >= 0) timers.set(i, timer);
-        else timers.add(timer);
-        
-        final int id = timers.indexOf(timer);
-        
-        if (time > minTellTime) // Why tell if it's done too quickly to react?
-          target.schedTell("The id of the scheduled " + type + " is " + id);
-          
-        commandTable.put(id, "(" + time + "ms) " + commands);
-        
-        TimerTask task = new TimerTask() {
-          @Override
-          public void run() {
-            m.command(target, commands);
-            if (type.equals("defer")) {
-              timers.set(id, null);
-              target.schedTell("Defer completed."); // TODO: uppercase first letter
-            }
-          }
-        };
-        
-        if (type.equals("defer"))
-          timer.schedule(task, time);
-        else
-          timer.schedule(task, 0, time);
-    }
-    
-    private void cancelTimers(String[] args, MultiUser target, ArrayList<Timer> timers, String type) {
-        if (args.length == 0) { // no id was given
-          int length = timers.size();
-          for (int i = 0; i < length; i++) {
-            Timer timer = timers.get(i);
-            if (timer != null) timer.cancel();
-            timers.set(i, null);
-          }
-          target.schedTell("canceled all scheduled " + type + ".");
-          return;
-        }
-        
-        try {
-          int id = Integer.parseInt(args[0]);
-          Timer timer = timers.get(id);
-          if (timer != null) timer.cancel();
-          timers.set(id, null);
-          target.schedTell("canceled the " + type + " " + id);
-        } catch (NumberFormatException e) {
-          target.schedTell("invalid integer argument for id: not an integer");
-        } catch (IndexOutOfBoundsException e) {
-          target.schedTell("invalid integer argument for id: out of bounds");
-        }
-    }
-    
-    private void listTimers(MultiUser target, ArrayList<Timer> timers, Hashtable<Integer, String> commandTable, String type) {
-        String result = "The currently scheduled " + type + "s: ";
-        for (int i = 0; i < timers.size(); i++) {
-          if (timers.get(i) != null)
-            result += "\r\n" + i + ": " + commandTable.get(i);
-        }
-        target.schedTell(result);
     }
     
     private void listHashTable(MultiUser target, Hashtable<String, String> hash, String type) {
