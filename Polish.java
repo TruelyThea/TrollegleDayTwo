@@ -25,6 +25,13 @@ public class Polish<S> { // S stands for structure type
        return labels.keys();
     }
     
+    public Polish() {
+      put("1", __ -> true);
+      put("0", __ -> false);
+      put("true", __ -> true);
+      put("false", __ -> false);
+    }
+    
     // This method is used to recursively build up Predicates with the meaning given by the expression args.
     // In other words, it parses a Polish expression and returns the associated Predicate Function.
     // See https://en.wikipedia.org/wiki/Polish_notation
@@ -72,6 +79,7 @@ public class Polish<S> { // S stands for structure type
         String[] term2 = Arrays.copyOfRange(args, i, args.length);
         return makeCondition(term1).or(makeCondition(term2));
       }
+      // This is the only if token.
       if (args[0].equals("->")) {
         int i = 2;
         String[] term1 = Arrays.copyOfRange(args, 1, i);
@@ -82,7 +90,8 @@ public class Polish<S> { // S stands for structure type
         String[] term2 = Arrays.copyOfRange(args, i, args.length);
         return (makeCondition(term1).negate()).or(makeCondition(term2));
       }
-      if (args[0].equals("<->")) {
+      // This is the if and only if token, it may be used for equality checks.
+      if (args[0].equals("<->") || args[0].equals("==")) {
         int i = 2;
         String[] term1 = Arrays.copyOfRange(args, 1, i);
         while (count(term1) >= 0) {
@@ -100,8 +109,8 @@ public class Polish<S> { // S stands for structure type
     // count(Tau) = -1 and count(Rho) >= 0 for each proper initial segment of Tau.
     private int count(String[] args) throws IllegalArgumentException {
       int count = 0;
-      for (int i = 0; i < args.length; i ++) {
-        if (args[i].equals("||") || args[i].equals("&&")  || args[i].equals("<->")  || args[i].equals("->")) count += 2-1;
+      for (int i = 0; i < args.length; i++) {
+        if (args[i].equals("||") || args[i].equals("&&")  || args[i].equals("<->")  || args[i].equals("->") || args[i].equals("==")) count += 2-1;
         else if (args[i].equals("!")) count += 1-1;
         else if (labels.get(args[i]) != null) count += 0-1;
         else throw new IllegalArgumentException("unknown token `" + args[i] + "'");

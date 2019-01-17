@@ -196,6 +196,20 @@ public class ExtendedAdminCommands extends AdminCommands {//tell, do, say?, {NAM
                     listHashTable(target, addedCommands, "command");
                 }, "listcommands");
         
+        // This is useful in any of my higher-order commands that take other commands as arguments
+        // because you might want to perform more than one command on interval or perform more than one command with selected users
+        // This command may be stacked to run several commands at once: /.then COMMAND /.then COMMAND /.then COMMAND COMMAND
+        addCommand("then", "then COMMAND COMMAND", "Performs both commands. The second command starts at the first argument after the first argument that begins with /. (Thea)", 2,
+                (args, target) -> {
+                    int index = 1;
+                    for (index = 1; index < args.length; index++)
+                      if (args[index].startsWith("/"))
+                        break;
+                    if (index == args.length)
+                      index = 1;
+                    m.command(target, String.join(" ", Arrays.copyOfRange(args, 0, index)));
+                    m.command(target, argsToString(index, args));
+                }, "andthen");
         
         // The following three commands are duplicated from ExtendedUserBehavior.java to allow both the /!command and /command notations.
         // The comments are presented only here.
@@ -237,7 +251,11 @@ public class ExtendedAdminCommands extends AdminCommands {//tell, do, say?, {NAM
                   
                   perform(target, pred, commands);
                   
-                  target.schedTell("All done.");
+                  // I used to tell the caller that the command was all done, but it didn't really indicate 
+                  // whether the command was successful so it didn't seem that useful
+                  // esp. since it would say the same message regardless of how many users were queried
+                  // `/.with NonexistantUser command` would do nothing with any user and still say "All done."
+                  // target.schedTell("All done.");
                 }, "all", "filter");
         
         // This command queries the user(s) with USER nick or number, 
@@ -270,7 +288,7 @@ public class ExtendedAdminCommands extends AdminCommands {//tell, do, say?, {NAM
                   
                   perform(target, recipients, commands);
                   
-                  target.schedTell("All done.");
+                  // target.schedTell("All done.");
                 });
 
         // This command queries the user(s) with USER nick or number. 
@@ -284,7 +302,7 @@ public class ExtendedAdminCommands extends AdminCommands {//tell, do, say?, {NAM
                   
                   perform(pred, commands);
                   
-                  target.schedTell("All done.");
+                  // target.schedTell("All done.");
                 });
                 
         // So you can make more complex predicate query-selectors, determined by the Polish expression.
