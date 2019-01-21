@@ -4,6 +4,7 @@ import java.util.Hashtable;
 import java.util.function.Predicate; 
 import java.util.Enumeration;
 import java.util.Arrays;
+import java.lang.IllegalArgumentException;
 
 public class Polish<S> { // S stands for structure type
 
@@ -40,7 +41,7 @@ public class Polish<S> { // S stands for structure type
     // These Predicates are used as selectors in queries and values in $[]'s.
     // 
     // args is an array of tokens comprising the expression
-    private Predicate<S> makeCondition(String[] args) throws IllegalArgumentException { // Polish parser
+    public Predicate<S> makeCondition(String[] args) throws IllegalArgumentException { // Polish parser
       // this code checks that the expression is well-formed
       if (count(args) != -1) throw new IllegalArgumentException("not well formed");
       for (int i = 0; i < args.length - 1; i++) 
