@@ -162,6 +162,8 @@ public class ExtendedAdminCommands extends AdminCommands {
                     // (although they'll already see the command); I haven't implemented this because the showVerbose variable in Multi.java
                 }, "dosay");
         
+        // In the following four "query" commands, to query users and access their properties, PREDICATE may now be either a set label or an arbitrary Polish expression
+        
         // This command queries all users selected by the PREDICATE
         // then performs the command on each with $[values] replaced by the selected users' properties.
         addCommand("allwho", "allwho PREDICATE [command]", "Does the command with all users who satisfy the PREDICATE. In [command], use $[value] to get a value of the user. (Thea)", 2,
@@ -183,7 +185,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         addCommand("if", "if USER PREDICATE [command]", "Does the command if the USER satisfies the PREDICATE. (Thea)", 3,
                 (args, target) -> {
                   query.ifThen(args, target);
-                }, "onlyif", "ifthen");
+                }, "onlyif", "ifthen", "withif");
 
         // This command queries the user(s) with USER nick or number. 
         // then makes that user perform the command with $[values] replaced by the selected users' properties.
