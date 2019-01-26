@@ -9,9 +9,12 @@ public class ExtendedUserBehaviour extends UserBehaviour {
     }
 
     protected void addAll() {
+        super.addAll();
+        
         ExtendedCaptchaMulti c = (ExtendedCaptchaMulti) m;
         addMyCommand("hug", 1, (args, target) -> c.hugUser(target, args[0]), "Hug another user");
         addMyCommand("stab", 1, (args, target) -> c.stabUser(target, args[0]), "Stab another user");
+        addMyCommand("pat", 1, (args, target) -> m.patUser(target, args[0]), "Pat another user");
         addMyCommand("appear", 0, (args, target) -> m.tellRoom("Chasidy appears!"), null);
         addMyCommand("magic", 0, (args, target) -> m.tellRoom("Chasidy prepares the Path to Exile card!"), null);
         addMyCommand("flip", 0, (args, target) -> c.flip(target), "Flip a coin");
@@ -38,8 +41,6 @@ public class ExtendedUserBehaviour extends UserBehaviour {
                     m.relay("normal", target, data);
                     m.annPrivate(target, target.getNumber() + "", "just now: [" + target.getNick() + "] " + data);
                 }), aliasesSay, null);
-        
-        super.addAll();
         
         sanityCheck();
         

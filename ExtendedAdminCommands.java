@@ -1,4 +1,4 @@
-﻿package anon.trollegle;
+package anon.trollegle;
 
 import java.lang.NumberFormatException;
 import java.lang.IllegalArgumentException;
