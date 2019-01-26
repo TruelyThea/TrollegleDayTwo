@@ -10,10 +10,12 @@ public class ExtendedUserBehaviour extends UserBehaviour {
 
     protected void addAll() {
         ExtendedCaptchaMulti c = (ExtendedCaptchaMulti) m;
-        addMyCommand("hug", 1, (args, target) -> c.hugUser(target, args[0]), null);
-        addMyCommand("stab", 1, (args, target) -> c.stabUser(target, args[0]), null);
+        addMyCommand("hug", 1, (args, target) -> c.hugUser(target, args[0]), "Hug another user");
+        addMyCommand("stab", 1, (args, target) -> c.stabUser(target, args[0]), "Stab another user");
         addMyCommand("appear", 0, (args, target) -> m.tellRoom("Chasidy appears!"), null);
         addMyCommand("magic", 0, (args, target) -> m.tellRoom("Chasidy prepares the Path to Exile card!"), null);
+        addMyCommand("flip", 0, (args, target) -> c.flip(target), "Flip a coin");
+        addMyCommand("shrug", 0, (args, target) -> c.shrug(target), "¯\\_(ツ)_/¯");
         
         String[] aliasesTell = {"relay", "inform"};
         String[] aliasesDo = {"perform", "doperform"};
