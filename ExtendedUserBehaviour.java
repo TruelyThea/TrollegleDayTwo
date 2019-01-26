@@ -15,7 +15,7 @@ public class ExtendedUserBehaviour extends UserBehaviour {
         addMyCommand("appear", 0, (args, target) -> m.tellRoom("Chasidy appears!"), null);
         addMyCommand("magic", 0, (args, target) -> m.tellRoom("Chasidy prepares the Path to Exile card!"), null);
         addMyCommand("flip", 0, (args, target) -> c.flip(target), "Flip a coin");
-        addMyCommand("shrug", 0, (args, target) -> c.shrug(target), "¯\\_(ツ)_/¯");
+        addMyCommand("shrug", 0, (args, target) -> c.shrug(target, argsToString(0, args)), "¯\\_(ツ)_/¯");
         
         String[] aliasesTell = {"relay", "inform"};
         String[] aliasesDo = {"perform", "doperform"};
