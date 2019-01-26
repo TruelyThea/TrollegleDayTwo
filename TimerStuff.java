@@ -8,7 +8,10 @@ import java.util.Hashtable;
 
 import java.util.Arrays;
 
+import java.lang.IllegalArgumentException;
+
 import static anon.trollegle.Commands.argsToString;
+import static anon.trollegle.Util.parseTime;
 
 public class TimerStuff {
   
@@ -51,11 +54,11 @@ public class TimerStuff {
     
     private void makeTimer(String[] args, MultiUser target, ArrayList<Timer> timers, Hashtable<Integer, String> commandTable, String type, int minTime, int minTellTime) {
         String commands = argsToString(1, args);
-        int time = 0;
+        long time = 0;
         try {
-          time = Integer.parseInt(args[0]);
-        } catch (NumberFormatException e) {
-          target.schedTell("invalid integer argument for TIMES");
+          time = parseTime(args[0]);
+        } catch (IllegalArgumentException e) {
+          target.schedTell("IllegalArgumentException: " + e.getMessage());
           return;
         }
         
@@ -76,7 +79,7 @@ public class TimerStuff {
         if (time > minTellTime) // Why tell if it's done too quickly to react?
           target.schedTell("The id of the scheduled " + type + " is " + id);
           
-        commandTable.put(id, "(" + time + "ms) " + commands);
+        commandTable.put(id, "(" + args[0] + ") " + commands);
         
         TimerTask task = new TimerTask() {
           @Override

@@ -15,6 +15,28 @@ public class ExtendedUserBehaviour extends UserBehaviour {
         addMyCommand("appear", 0, (args, target) -> m.tellRoom("Chasidy appears!"), null);
         addMyCommand("magic", 0, (args, target) -> m.tellRoom("Chasidy prepares the Path to Exile card!"), null);
         
+        String[] aliasesTell = {"relay", "inform"};
+        String[] aliasesDo = {"perform", "doperform"};
+        String[] aliasesSay = {"dosay"};
+        
+        // See the comments for the analogous commands in ExtendedAdminCommands.java
+        addMyCommand("tell", new BodyCommand(null, null,  1,
+                (args, target) -> {
+                    m.annPrivate(target, target.getNumber() + "", argsToString(0, args));
+                }), aliasesTell, null);
+        addMyCommand("do", new BodyCommand(null, null, 1,
+                (args, target) -> {
+                    String data = argsToString(0, args);
+                    m.hear(target, data);
+                    m.annPrivate(target, target.getNumber() + "", "just now: [" + target.getNick() + "] " + data);
+                }), aliasesDo, null);
+        addMyCommand("say", new BodyCommand(null, null, 1,
+                (args, target) -> {
+                    String data = argsToString(0, args);
+                    m.relay("normal", target, data);
+                    m.annPrivate(target, target.getNumber() + "", "just now: [" + target.getNick() + "] " + data);
+                }), aliasesSay, null);
+        
         super.addAll();
         
         sanityCheck();

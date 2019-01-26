@@ -19,6 +19,7 @@ import java.lang.IllegalArgumentException;
 import java.util.ConcurrentModificationException;
 
 import static anon.trollegle.Commands.argsToString;
+import static anon.trollegle.Template.replace;
 
 public class QueryStuff {
     private Polish<MultiUser> labels = new Polish<MultiUser>();
@@ -84,6 +85,9 @@ public class QueryStuff {
           return ponies[index];
         });
         
+        // This is used to escape "$[text]" by $[$][text]
+        values.put("$", p -> "$");
+        
         values.put("isAdmin", p -> "" + m.isAdmin(p));
         values.put("isVerboseAdmin", p -> "" + m.isVerboseAdmin(p));
         values.put("isCreated", p -> "" + p.isCreated());
@@ -103,10 +107,10 @@ public class QueryStuff {
         values.put("isLurker", p -> "" + p.isLurker());
        
         funs.put("choose", (p, args) -> args[(int) Math.floor(Math.random()*(double)args.length)]);
-
+        funs.put("interpolate", (p, args) -> argsToString(0, args));
     }
   
-    private int indexOfCommand(String[] args) {
+    public static int indexOfCommand(String[] args) {
       int i = 0;
       for (i = 0; i < args.length; i++) {
         if (args[i].startsWith("/")) break;
@@ -127,6 +131,9 @@ public class QueryStuff {
         perform(target, pred, command);
       } catch (IllegalArgumentException e) {
         target.schedTell(argsToString(0, expression) + " isn't a well formed expression: " + e.getMessage());
+      } catch (ConcurrentModificationException e) {
+        target.schedTell("ConcurrentModificationException: the user collection was modified (perhaps by a /kick) while it was under iteration;\r\n"
+                       + "if you were kicking users in /.allwho, try /.with after you get the list of users through /.allwho PREDICATE /.tell $[number].");
       }
     }
     
@@ -205,65 +212,51 @@ public class QueryStuff {
     
     // This method has source perform commands after replacing $[value]'s with recipient's properties.
     private void perform(MultiUser source, MultiUser recipient, String commands) {
-          String uCommands = commands;
-          
-          String find = "\\$\\[(\\w+)([^\\]]*)\\]";
-          Pattern p = Pattern.compile(find); // \\$\\[(\\w+)\\]
-          Matcher match = p.matcher(uCommands);
-          
-          while (match.find()) {
-            String property = match.group(1);
-            Function<MultiUser, String> prop = values.get(property);
-            if (prop != null) {
-              uCommands = uCommands.replaceFirst(find, prop.apply(recipient));
-            } else if (match.group(2) != null && match.group(2).length() > 1) {
-              BiFunction<MultiUser, String[], String> fun = funs.get(property);
-              // TODO: split after substring from length of first match to \\s+
-              String[] args = match.group(2).substring(1).split("\\s+");
+          String uCommands = replace(commands, "\\$\\[(.+?)\\]", match -> {
+            String[] args = match.split("\\s+");
+            if (args.length > 0) {
+              String property = args[0];
               
-              // System.out.println(args[0] + " " + match.group(2));
-              uCommands = uCommands.replaceFirst(find, fun != null ? fun.apply(recipient, args) : "[" + property + " wasn't found]");
-            } else {
-              // System.out.println(property + " wasn't found");
-              uCommands = uCommands.replaceFirst(find, "[" + property + " wasn't found]");
-              // alert that the property was not found
+              Function<MultiUser, String> prop = values.get(property);
+              if (prop != null) return prop.apply(recipient);
+              
+              if (args.length > 1) {
+                BiFunction<MultiUser, String[], String> fun = funs.get(property);
+                if (fun != null) return fun.apply(recipient, Arrays.copyOfRange(args, 1, args.length));
+              }
+              
+              return "[" + property + " wasn't found]";
             }
-            match = p.matcher(uCommands);
-          }
+            
+            return "$"; // shorthand escape for "$"
+          });
           
           m.command(source, uCommands);
     }
     
     // This method is used to query-select recipients and perform a command on them.
-    private void perform(MultiUser source, Predicate<MultiUser> recipients, String commands) {
-        try {
-          synchronized (m.users) {
-              // Iterating over m.users array would skip the consoleDummy. This is solved by iterating over m.allUsers.
-              Iterator<MultiUser> users = m.allUsers.iterator();
-              MultiUser u = null;
-              while (users.hasNext()) {
-                  u = users.next();
-                  if (recipients.test(u)) perform(source, u, commands);
-              }
-          }
-        } catch (ConcurrentModificationException e) {
-          System.out.println("The user collection was modified (perhaps by a /kick) while it was under iteration");
+    private void perform(MultiUser source, Predicate<MultiUser> recipients, String commands) throws ConcurrentModificationException {
+        synchronized (m.users) {
+            // Iterating over m.users array would skip the consoleDummy. This is solved by iterating over m.allUsers.
+            Iterator<MultiUser> users = m.allUsers.iterator();
+            MultiUser u = null;
+            while (users.hasNext()) {
+                u = users.next();
+                if (recipients.test(u)) perform(source, u, commands);
+            }
         }
+
     }
     
     // This method is used to query-select targets and make them perform a command.
-    private void perform(Predicate<MultiUser> target, String commands) {
-        try {
-          synchronized (m.users) {
-              Iterator<MultiUser> users = m.allUsers.iterator();
-              MultiUser u = null;
-              while (users.hasNext()) {
-                  u = users.next();
-                  if (target.test(u)) perform(u, u, commands);
-              }
-          }
-        } catch (ConcurrentModificationException e) {
-          System.out.println("The user collection was modified (perhaps by a /kick) while it was under iteration");
+    private void perform(Predicate<MultiUser> target, String commands) throws ConcurrentModificationException{
+        synchronized (m.users) {
+            Iterator<MultiUser> users = m.allUsers.iterator();
+            MultiUser u = null;
+            while (users.hasNext()) {
+                u = users.next();
+                if (target.test(u)) perform(u, u, commands);
+            }
         }
     }
 }

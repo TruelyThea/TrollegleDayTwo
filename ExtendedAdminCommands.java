@@ -1,4 +1,4 @@
-package anon.trollegle;
+﻿package anon.trollegle;
 
 import java.lang.NumberFormatException;
 import java.lang.IllegalArgumentException;
@@ -21,13 +21,13 @@ import java.util.regex.Matcher;
 import java.io.*;
 
 import static anon.trollegle.Util.t;
+import static anon.trollegle.Template.replace;
 
-// TODO: in time commands accept 1s, 1m, 1h, 1d forms
 // TODO: accept commands without slashes where it is possible
 // TODO: Temera's commands
 // TODO: /roll /ship /coin
-// TODO: make /.simulate USER /say alert user what was said on their behalf
-// TODO: make /.addcommand [command] first fill arguments $1 $2 $3, ..., then append the rest
+// TODO: foreach argument
+// TODO: override /.saveandkill and the inital --json load to include hug/stab count, commands, and labels
 
 public class ExtendedAdminCommands extends AdminCommands {
     
@@ -48,6 +48,8 @@ public class ExtendedAdminCommands extends AdminCommands {
           target.schedTell("Did you know that you search for commands whose usage or descriptions contain a phrase or for a command of a specific name?\r\n"
               + "Type \"/.help [phrase/command name]\" to get a shortened help response that only contains relevant commands.\r\n"
               + "Additionally, all of the new commands are marked with the writer's name, so you may type \"/.help Thea\" to get all of my commands.\r\n"
+              + "The best way to learn about the new commands is through the source code, which describes the uses of the commands and shows example usage.\r\n"
+              + "New Admin Commands (see especially the Query Commands section) https://github.com/TruelyThea/TrollegleDayTwo/blob/master/ExtendedAdminCommands.java\r\n"
               + "I hope you enjoy using these new features! ^^\r\n"
               + "~Thea");
         });
@@ -100,15 +102,37 @@ public class ExtendedAdminCommands extends AdminCommands {
                     target.schedTell("Completed the repetition");
                 }, "rep");
         
-        addCommand("addcommand", "addcommand COMMAND [command]", "Makes the initial segment of a command available for easy calling. This may be the entire command or may be a proper initial segment that accepts arguments. Use the /. or /! notation. (Thea)", 2,
+        addCommand("addcommand", "addcommand COMMAND [command]", "Makes /!COMMAND a shorthand for [command]. [command] may be an entire command, an initial segment for args to be appended to, or allow the first few args to fill where $0 $1 $2, ... appear. Escape $d... though $0d... (Thea)", 2,
+        //"Makes the initial segment of a command available for easy calling. This may be the entire command or may be a proper initial segment that accepts arguments. Use the /. or /! notation. (Thea)", 2,
                 (args, target) -> {
                     final String command = argsToString(1, args);
                     String name = args[0].toLowerCase(Locale.ROOT);
+                    String regex = "\\$(\\d+)";
+                    
+                    Pattern p = Pattern.compile(regex);
+                    Matcher match = p.matcher(command);
+                    int max = 0;
+                    while (match.find())
+                      if (!match.group(1).startsWith("0") || match.group(1).length() == 1)
+                        max = Math.max(max, Integer.parseInt(match.group(1)) + 1);
+                    final int from = max;
                     
                     if ((commands.get(name) == null && aliases.get(name) == null) || addedCommands.get(name) != null) {
                       addedCommands.put(name, command);
+                      // TODO: Should I set the required number of arguments to max instead of 0?
+                      // Should I add a REQUIRED optional argument to /.addcommand COMMAND REQUIRED [command]
+                      // so that it sets the required number of arguments to REQUIRED?
                       addCommand(name, null, null, 0, (innerargs, innertarget) -> {
-                        m.command(innertarget, command + " " + argsToString(0, innerargs));
+                        
+                        String filledCommand = replace(command, regex, mtch -> {
+                          // escape $d... through $0d...
+                          if (mtch.length() > 1 && mtch.startsWith("0")) return "$" + mtch.substring(1);
+                          
+                          int index = Integer.parseInt(mtch);
+                          return index < innerargs.length ? innerargs[index] : "";
+                        });
+                        
+                        m.command(innertarget, filledCommand + " " + argsToString(from, innerargs));
                       });
                       target.schedTell("Command added.");
                     } else
@@ -160,41 +184,74 @@ public class ExtendedAdminCommands extends AdminCommands {
                     m.relay("normal", target, data);
                     // maybe TODO: if target is muted, relay the data to verbose admins, ... 
                     // (although they'll already see the command); I haven't implemented this because the showVerbose variable in Multi.java
+                    // I'm leaning against doing this because I think verbose admins should see only what is typed
                 }, "dosay");
+        
+        // Query Commands
         
         // In the following four "query" commands, to query users and access their properties, PREDICATE may now be either a set label or an arbitrary Polish expression
         
+        // The $[values] are replaced by the first selected user so "/.with 0 /.simulate Thea /say The admin has $[patCount] pats"
+        // will make Thea say the console dummy's pat count
+        // You can get around this by adding commands with /.addcommand. After calling "/.addcommand myPatCount /.with Thea /say Thea has $[patCount] pats"
+        // calling "/.simulate 0 /.myPatCount" will make the console dummy say Thea's pat count.
+        // This happens because commands in /.addcommand will internally call m.command
+        // which will "start the process afresh" with the new caller and the new command, no $[values] replaced yet.
+        
         // This command queries all users selected by the PREDICATE
-        // then performs the command on each with $[values] replaced by the selected users' properties.
+        // then the caller performs the command on each with $[values] replaced by the selected users' properties.
         addCommand("allwho", "allwho PREDICATE [command]", "Does the command with all users who satisfy the PREDICATE. In [command], use $[value] to get a value of the user. (Thea)", 2,
                 (args, target) -> {
                   query.allWho(args, target);
-                }, "all", "filter");
+                }, "all", "filter", "withall", "withallwho");
+        // Example: /.allwho || isVerbose isAdmin /.apm $[number] you either are an admin or want to be an admin ^^
+        // Example: /.allwho ALL /.apm $[number] $[nick], your pat count is currently $[patCount].
+        
         
         // This command queries the user(s) with USER nick or number, 
-        // then performs the command with $[values] replaced by the selected users' properties
+        // then performs the command with $[values] replaced by the selected user(s)' properties
         // There are two uses of this command:
         //   (1) Do a command after substituting another user's properties
         // Since all $[values] are replaced immediately, 
         //   (2) you can prepend a /.with USER to a /.allwho or /.simulate to get another user's properties.
+        // In both /.with and /.simulate you may repeat users.
         addCommand("with", "with USER... [command]", "Does the command with every USER; you are still the target (caller). In [command], use $[value] to get a value of the USER. (Thea)", 2,
                 (args, target) -> {
                   query.with(args, target);
                 });
-      
+        // Example: /.with NRP CL Bibi PUB 0 /.apm $[number] Your pat count is currently at $[patCount] and your hug count is currently at $[hugCount]
+        // Example: /.with 0 /say The admin currently has only $[patCount] pats.
+        
+        
+        // This command will have the caller do the command if the USER satisfies the PREDICATE
+        // This command also can be used to see whether a USER exists, with /.if USER 1 /tell yes
+        // also replaces $[value]'s with the selected user's properties.
         addCommand("if", "if USER PREDICATE [command]", "Does the command if the USER satisfies the PREDICATE. (Thea)", 3,
                 (args, target) -> {
                   query.ifThen(args, target);
                 }, "onlyif", "ifthen", "withif");
-
+        // Example: /.if NRP ! isAdmin /.then /.d NRP /.g Hello ^^
+        // Example: 
+        //     /.setLabel doGreet true
+        //     /.addCommand testForQs /.if qs doGreet /.then /say qs has finally joined! Welcome, qs. ^^ /.setlabel doGreet false
+        //     /.simulate 0 /.setinterval 15000 /.testForQs
+        // Explanation: You can't know the interval id ahead of time to stop the interval, so we couldn't necessarily call /.cancelInterval id
+        //     the simulate call is just so we don't the "user doesn't exist" alert every 15s
+        //     for expressions, "true" is "1" is always true, "false" is "0" is always false
+        
+        
         // This command queries the user(s) with USER nick or number. 
-        // then makes that user perform the command with $[values] replaced by the selected users' properties.
-        addCommand("simulate", "simulate USER [command]", "Has the USER do the [command]. In [command], use $[value] to get the value of the USER. (Thea)", 2,
+        // then makes that user(s) perform the command with $[values] replaced by the selected users' properties.
+        addCommand("simulate", "simulate USER... [command]", "Has the USER do the [command]. In [command], use $[value] to get the value of the USER. (Thea)", 2,
                 (args, target) -> {
                   query.simulate(args, target);
-                });
-                
+                }, "sim");
+        // Example: /.then /.g Were you looking for this command? /.simulate Shĭz /.help thea
+        // Example: /.setinterval 15000 /.simulate 13 /n $[randomPony]
+        
+        
         // So you can make more complex predicate query-selectors, determined by the Polish expression.
+        // now you can use arbitrary Polish expressions in /.allwho and /.if, without setting a label
         addCommand("setlabel", "setlabel LABEL [Polish]", "Use existing labels, !, ||, &&, ->, and <-> as symbols. (Thea)", 2,
                 (args, target) -> {
                   query.setLabel(args, target);
