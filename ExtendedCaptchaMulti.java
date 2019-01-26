@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static anon.trollegle.Util.t;
 
@@ -12,7 +13,7 @@ import anon.trollegle.*;
 
 public class ExtendedCaptchaMulti extends CaptchaMulti {
   
-    private long hugCooldown = 5000, stabCooldown = 5000;
+    private long hugCooldown = 5000, stabCooldown = 5000, flipCooldown = 5000;
     
     @Override
     protected AdminCommands makeAdminCommands() { return new  ExtendedAdminCommands(this); }
@@ -53,12 +54,31 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
         }
     }
     
+    protected void flip(MultiUser source) {
+        ExtendedCaptchaUser src = (ExtendedCaptchaUser) source;
+        if (System.currentTimeMillis() - src.lastFlip < flipCooldown) {
+            src.schedTell("You're flipping coins too quickly");
+        } else {
+            src.lastFlip = System.currentTimeMillis();
+            int theCoin = ThreadLocalRandom.current().nextInt(0,2);
+            String coinResult = (theCoin == 1) ? "heads" : "tails";
+            relay("system", src, String.format("%1$s flips a coin and gets %2$s!", src.getDisplayNick(), coinResult));
+        }
+    }
+    
+    protected void shrug(MultiUser source, String message) {
+        message = message + " ¯\\_(ツ)_/¯";
+        relay("normal", source, message);
+        if (source.isMuted())
+            relay("special", source, message, "mute", to -> isVerboseAdmin(to) && !to.isMuted());
+    }
+  
     public static class ExtendedCaptchaUser extends CaptchaUser {
       
         @Persistent
         int hugCount, stabCount;
         @Persistent
-        long lastHug, lastStab;
+        long lastHug, lastStab, lastFlip;
       
         public ExtendedCaptchaUser(Callback<? super MultiUser> callback) { super(callback); }
         
