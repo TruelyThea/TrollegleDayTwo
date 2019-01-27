@@ -21,6 +21,8 @@ public class ExtendedBotBehaviour extends BotBehaviour {
         addMyCommand("magic", b.getCommand("magic"), null, null);
         
         addMyCommand("flip", b.getCommand("flip"), null, null);
+        addMyCommand("roll", b.getCommand("roll"), null, null);
+        addMyCommand("ship", b.getCommand("ship"), null, null);
         addMyCommand("shrug", b.getCommand("shrug"), null, null);
         
         addMyCommand("tell", b.getCommand("tell"), null, null);
