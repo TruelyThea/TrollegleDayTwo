@@ -22,7 +22,7 @@ public class ExtendedUserBehaviour extends UserBehaviour {
         addMyCommand("roll", 1, (args, target) -> {
             if (args.length == 1)
                 c.roll(target, args[0], "1");
-            else if (args.length == 2)
+            else
                 c.roll(target, args[0], args[1]);
             }, "Roll COUNT INT-sided dice");
         addMyCommand("ship", 2, (args, target) -> c.ship(target, args[0], args[1]), "Ship two other users");
