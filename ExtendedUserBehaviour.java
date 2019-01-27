@@ -21,11 +21,11 @@ public class ExtendedUserBehaviour extends UserBehaviour {
         addMyCommand("flip", 0, (args, target) -> c.flip(target), "Flip a coin");
         addMyCommand("roll", 1, (args, target) -> {
             if (args.length == 1)
-                m.roll(target, args[0], "1");
+                c.roll(target, args[0], "1");
             else if (args.length == 2)
-                m.roll(target, args[0], args[1]);
+                c.roll(target, args[0], args[1]);
             }, "Roll COUNT INT-sided dice");
-        addMyCommand("ship", 2, (args, target) -> c.flip(target), "Ship two other users");
+        addMyCommand("ship", 2, (args, target) -> c.ship(target, args[0], args[1]), "Ship two other users");
         addMyCommand("shrug", 0, (args, target) -> c.shrug(target, argsToString(0, args)), "¯\\_(ツ)_/¯");
         
         String[] aliasesTell = {"relay", "inform"};
