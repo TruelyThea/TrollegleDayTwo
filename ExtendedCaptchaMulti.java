@@ -112,11 +112,11 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
             src.schedTell("You can't target yourself with /ship");
         } else if (target1 == target2) {
             src.schedTell("You can't ship a person with themself");
-        } else if (System.currentTimeMillis() - source.lastShip < shipCooldown){
+        } else if (System.currentTimeMillis() - src.lastShip < shipCooldown){
             src.schedTell("You're shipping too quickly");
         } else {
             src.lastShip = System.currentTimeMillis();
-            relay("system", source, String.format("%1$s ships %2$s and %3$s! Awww <3", source.getDisplayNick(), target1.getDisplayNick(), target2.getDisplayNick()));
+            relay("system", src, String.format("%1$s ships %2$s and %3$s! Awww <3", source.getDisplayNick(), target1.getDisplayNick(), target2.getDisplayNick()));
         }
     }
   
