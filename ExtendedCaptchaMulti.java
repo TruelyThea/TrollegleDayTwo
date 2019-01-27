@@ -67,7 +67,7 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
     }
     
     protected void roll(MultiUser source, String limit, String nDice) {
-        ExtendedCaptchaUser src = (ExtendedCaptchaUser) source
+        ExtendedCaptchaUser src = (ExtendedCaptchaUser) source;
         try {
             int rollLimit = Integer.parseInt(limit);
             int dice = Integer.parseInt(nDice);
@@ -94,11 +94,12 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
                 } else {
                     String rollStr = rolls.toString();
                     rollStr = rollStr.replace("[", "").replace("]", "").trim();
-                    relay("system", src, String.format("%1$s rolls %2$d %3$d-sided dice and gets: %4$s!", src.getDisplayNick(), dice, rollLimit, rollStr);
+                    relay("system", src, String.format("%1$s rolls %2$d %3$d-sided dice and gets: %4$s!", src.getDisplayNick(), dice, rollLimit, rollStr));
                 }
             }
         } catch (NumberFormatException e) {
             src.schedTell("At least one of your inputs is invalid");
+        }
     }
                           
     protected void ship(MultiUser source, String name1, String name2) {
