@@ -25,8 +25,6 @@ import static anon.trollegle.Template.replace;
 
 // TODO: accept commands without slashes where it is possible
 // TODO: Temera's commands
-// TODO: /roll /ship /coin
-// TODO: foreach argument
 // TODO: override /.saveandkill and the inital --json load to include hug/stab count, commands, and labels
 
 public class ExtendedAdminCommands extends AdminCommands {
@@ -102,19 +100,21 @@ public class ExtendedAdminCommands extends AdminCommands {
                     target.schedTell("Completed the repetition");
                 }, "rep");
         
-        addCommand("addcommand", "addcommand COMMAND [command]", "Makes /!COMMAND a shorthand for [command]. [command] may be an entire command, an initial segment for args to be appended to, or allow the first few args to fill where $0 $1 $2, ... appear. Escape $d... though $0d... (Thea)", 2,
+        addCommand("addcommand", "addcommand COMMAND [command]", "Makes /!COMMAND a shorthand for [command]. [command] may be an entire command, an initial segment for args to be appended to, or allow the first few args to fill where $0 $1 $2, ... appear. Escape $d... though $0d.... Additionally you may use ... after an arg like '$0...' to get all the arguments from that one (rest operator). (Thea)", 2,
         //"Makes the initial segment of a command available for easy calling. This may be the entire command or may be a proper initial segment that accepts arguments. Use the /. or /! notation. (Thea)", 2,
-                (args, target) -> {
+                (args, target) -> { // This function is really ugly right now.
                     final String command = argsToString(1, args);
                     String name = args[0].toLowerCase(Locale.ROOT);
-                    String regex = "\\$(\\d+)";
+                    String regex = "\\$(\\d+(\\.\\.\\.)?)";
                     
                     Pattern p = Pattern.compile(regex);
                     Matcher match = p.matcher(command);
                     int max = 0;
                     while (match.find())
-                      if (!match.group(1).startsWith("0") || match.group(1).length() == 1)
-                        max = Math.max(max, Integer.parseInt(match.group(1)) + 1);
+                      if (!match.group(1).startsWith("0") ||  match.group(1).length() == (match.group(2) == null ? 1 : 4)) {
+                        if (match.group(2) != null) max = Integer.MAX_VALUE;
+                        else max = Math.max(max, Integer.parseInt(match.group(1)) + 1);
+                      }
                     final int from = max;
                     
                     if ((commands.get(name) == null && aliases.get(name) == null) || addedCommands.get(name) != null) {
@@ -126,8 +126,13 @@ public class ExtendedAdminCommands extends AdminCommands {
                         
                         String filledCommand = replace(command, regex, mtch -> {
                           // escape $d... through $0d...
-                          if (mtch.length() > 1 && mtch.startsWith("0")) return "$" + mtch.substring(1);
+                          if (mtch.length() > (mtch.endsWith("...") ? 4 : 1) && mtch.startsWith("0")) return "$" + mtch.substring(1);
                           
+                          if (mtch.endsWith("...")) {
+                            // the negative shorthand confuses me sometimes, so I'll just write long hand
+                            int index = Integer.parseInt(mtch.substring(0, mtch.length() - 3)); 
+                            return index < innerargs.length ? argsToString(index, innerargs) : "";
+                          }
                           int index = Integer.parseInt(mtch);
                           return index < innerargs.length ? innerargs[index] : "";
                         });
@@ -158,6 +163,11 @@ public class ExtendedAdminCommands extends AdminCommands {
                     m.command(target, String.join(" ", Arrays.copyOfRange(args, 0, index)));
                     m.command(target, argsToString(index, args));
                 }, "andthen");
+                
+        addCommand("foreach", "forEach LIST... [command]", "Preforms the command on each element of the list. Fills the command with $[value]'s like a query command, but only accepts the $[function args...] values and the special values: index, value, collection. (Thea)", 2,
+                (args, target) -> {
+                    query.each(args, target);
+                }, "each");
         
         // The following three commands are duplicated from ExtendedUserBehavior.java to allow both the /!command and /command notations.
         // The comments are presented only here.

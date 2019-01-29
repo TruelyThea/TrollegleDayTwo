@@ -106,8 +106,19 @@ public class QueryStuff {
         values.put("isInformed", p -> "" + p.isInformed());
         values.put("isLurker", p -> "" + p.isLurker());
        
-        funs.put("choose", (p, args) -> args[(int) Math.floor(Math.random()*(double)args.length)]);
+        funs.put("choose", (p, args) -> args.length == 0 ? "" : args[(int) Math.floor(Math.random()*(double)args.length)]);
         funs.put("interpolate", (p, args) -> argsToString(0, args));
+        funs.put("$", (__, ___) -> "$");
+        funs.put("name", (p, args) -> {
+          if (args.length == 0) return "";
+          MultiUser u = m.userFromName(args[0]);
+          return u == null ? "[user " + args[0] + " couldn't be found]" : u.getNick();
+        });
+        funs.put("id", (p, args) -> {
+          if (args.length == 0) return "";
+          MultiUser u = m.userFromName(args[0]);
+          return u == null ? "[user " + args[0] + " couldn't be found]" : "" + u.getNumber();
+        });
     }
   
     public static int indexOfCommand(String[] args) {
@@ -225,7 +236,8 @@ public class QueryStuff {
                 if (fun != null) return fun.apply(recipient, Arrays.copyOfRange(args, 1, args.length));
               }
               
-              return "[" + property + " wasn't found]";
+              // the property couldn't be found! There is no warning like before to make placing /.with before a /.forEach (or a /.with inside a /.forEach command) possible
+              return "$[" + property + "]"; 
             }
             
             return "$"; // shorthand escape for "$"
@@ -258,5 +270,35 @@ public class QueryStuff {
                 if (target.test(u)) perform(u, u, commands);
             }
         }
+    }
+    
+    // This isn't really a query commands, so this file has become a misnomer.
+    public void each(String[] args, MultiUser target) {
+      int index = Math.max(indexOfCommand(args), 1);
+      String command = argsToString(index, args);
+      
+      Integer[] j = {0};
+      for (int i = 0; i < index; i++) {
+        j[0] = i;
+        String filled = replace(command, "\\$\\[(.+?)\\]", match -> {
+          String[] innerargs = match.split("\\s+");
+          if (innerargs.length > 0) {
+            String property = innerargs[0];
+            
+            BiFunction<MultiUser, String[], String> fun = funs.get(property);
+            if (fun != null) return fun.apply(target, Arrays.copyOfRange(innerargs, 1, innerargs.length));
+            
+            if (property.equals("index")) return "" + j[0];
+            if (property.equals("value")) return "" + args[j[0]];
+            if (property.equals("collection")) return argsToString(0, Arrays.copyOfRange(args, 0, index));
+            
+            return "$[" + property + "]";
+          }
+          
+          return "$";
+        });
+        
+        m.command(target, filled);
+      }
     }
 }
