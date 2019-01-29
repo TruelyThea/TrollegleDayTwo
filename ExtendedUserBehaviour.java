@@ -19,14 +19,20 @@ public class ExtendedUserBehaviour extends UserBehaviour {
         addMyCommand("magic", 0, (args, target) -> m.tellRoom("Chasidy prepares the Path to Exile card!"), null);
         
         addMyCommand("flip", 0, (args, target) -> c.flip(target), "Flip a coin");
-        addMyCommand("roll", 1, (args, target) -> {
-            if (args.length == 1)
-                c.roll(target, args[0], "1");
-            else
-                c.roll(target, args[0], args[1]);
-            }, "Roll COUNT INT-sided dice");
-        addMyCommand("ship", 2, (args, target) -> c.ship(target, args[0], args[1]), "Ship two other users");
-        addMyCommand("shrug", 0, (args, target) -> c.shrug(target, argsToString(0, args)), "¯\\_(ツ)_/¯");
+        addMyCommand("roll", new BodyCommand(null, "Roll COUNT INT-sided dice", 1,
+            (args, target) -> {
+                if (args.length == 1)
+                    c.roll(target, args[0], "1");
+                else
+                    c.roll(target, args[0], args[1]);
+            }),
+            null, "INT COUNT");
+        addMyCommand("ship", new BodyCommand(null, "Ship two other users", 2, 
+            (args, target) -> c.ship(target, args[0], args[1])),
+            null, "USER1 USER2");
+        addMyCommand("shrug", new BodyCommand(null, "¯\\_(ツ)_/¯", 0,
+            (args, target) -> c.shrug(target, argsToString(0, args))),
+            null, "MESSAGE");
         
         String[] aliasesTell = {"relay", "inform"};
         String[] aliasesDo = {"perform", "doperform"};
