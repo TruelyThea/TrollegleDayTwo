@@ -13,7 +13,7 @@ import anon.trollegle.*;
 
 public class ExtendedCaptchaMulti extends CaptchaMulti {
   
-    private long hugCooldown = 5000, stabCooldown = 5000, flipCooldown = 5000;
+    private long hugCooldown = 5000, stabCooldown = 5000, flipCooldown = 5000, rollCooldown = 5000, shipCooldown = 5000;
     
     @Override
     protected AdminCommands makeAdminCommands() { return new  ExtendedAdminCommands(this); }
@@ -66,6 +66,60 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
         }
     }
     
+    protected void roll(MultiUser source, String limit, String nDice) {
+        ExtendedCaptchaUser src = (ExtendedCaptchaUser) source;
+        try {
+            int rollLimit = Integer.parseInt(limit);
+            int dice = Integer.parseInt(nDice);
+            if (rollLimit > 1000) {
+                src.schedTell("Your integer is too large");
+            } else if (rollLimit <= 1) {
+                src.schedTell("Your integer is too small");
+            } else if (dice <= 0) {
+                src.schedTell("You can't roll that few dice");
+            } else if (dice > 5) {
+                src.schedTell("You can't roll that many dice");
+            } else if (System.currentTimeMillis() - src.lastRoll < rollCooldown) {
+                src.schedTell("You're rolling dice too quickly");
+            } else {
+                src.lastRoll = System.currentTimeMillis();
+
+                List<Integer> rolls = new ArrayList<>();
+                for (int i = 1; i <= dice; i++) {
+                    rolls.add(ThreadLocalRandom.current().nextInt(1, rollLimit + 1));
+                }
+
+                if (dice == 1){
+                    relay("system", src, String.format("%1$s rolls a %2$d-sided die and gets %3$d!", src.getDisplayNick(), rollLimit, rolls.get(0)));
+                } else {
+                    String rollStr = rolls.toString();
+                    rollStr = rollStr.replace("[", "").replace("]", "").trim();
+                    relay("system", src, String.format("%1$s rolls %2$d %3$d-sided dice and gets: %4$s!", src.getDisplayNick(), dice, rollLimit, rollStr));
+                }
+            }
+        } catch (NumberFormatException e) {
+            src.schedTell("At least one of your inputs is invalid");
+        }
+    }
+                          
+    protected void ship(MultiUser source, String name1, String name2) {
+        ExtendedCaptchaUser src = (ExtendedCaptchaUser) source;
+        MultiUser target1 = userFromName(name1);
+        MultiUser target2 = userFromName(name2);
+        if (target1 == null||target2 == null) {
+            src.schedTell("Usage: /ship USER1 USER2");
+        } else if (src == target1||src == target2) {
+            src.schedTell("You can't target yourself with /ship");
+        } else if (target1 == target2) {
+            src.schedTell("You can't ship a person with themself");
+        } else if (System.currentTimeMillis() - src.lastShip < shipCooldown){
+            src.schedTell("You're shipping too quickly");
+        } else {
+            src.lastShip = System.currentTimeMillis();
+            relay("system", src, String.format("%1$s ships %2$s and %3$s! Awww <3", source.getDisplayNick(), target1.getDisplayNick(), target2.getDisplayNick()));
+        }
+    }
+  
     protected void shrug(MultiUser source, String message) {
         message = message + " ¯\\_(ツ)_/¯";
         relay("normal", source, message);
@@ -78,7 +132,7 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
         @Persistent
         int hugCount, stabCount;
         @Persistent
-        long lastHug, lastStab, lastFlip;
+        long lastHug, lastStab, lastFlip, lastRoll, lastShip;
       
         public ExtendedCaptchaUser(Callback<? super MultiUser> callback) { super(callback); }
         
