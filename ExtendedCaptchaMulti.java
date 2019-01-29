@@ -104,8 +104,8 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
                           
     protected void ship(MultiUser source, String name1, String name2) {
         ExtendedCaptchaUser src = (ExtendedCaptchaUser) source;
-        ExtendedCaptchaUser target1 = (ExtendedCaptchaUser) userFromName(name1);
-        ExtendedCaptchaUser target2 = (ExtendedCaptchaUser) userFromName(name2);
+        MultiUser target1 = userFromName(name1);
+        MultiUser target2 = userFromName(name2);
         if (target1 == null||target2 == null) {
             src.schedTell("Usage: /ship USER1 USER2");
         } else if (src == target1||src == target2) {
