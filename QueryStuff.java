@@ -179,7 +179,19 @@ public class QueryStuff {
       // defaults to one USER and a one-token expression the command starts on the third arg
       int index = Math.max(indexOfCommand(args), 2);
       String[] expression = Arrays.copyOfRange(args, 1, index);
-      String command = argsToString(index, args);
+      
+      int i = index + 1;
+      for (i = index + 1; i < args.length; i++) {
+        if (args[i].toLowerCase().equals("/.else"))
+          break;
+      }
+      
+      // To un-escape /..else to /.else and /...else to /..else ...
+      Function<String, String> unescape = s -> "/" + s.substring(2);
+      String match = "(?i)(\\/\\.{2,}else)";
+      
+      String consequent = replace(argsToString(0, Arrays.copyOfRange(args, index, i)), match, unescape);
+      String otherwise = replace(argsToString(i + 1, args), match, unescape);
       
       try {
         Predicate<MultiUser> condition = labels.makeCondition(expression);
@@ -188,8 +200,10 @@ public class QueryStuff {
         if (recipient == null) {
           target.schedTell("User " + args[0] + " couldn't be found.");
         } else if (condition.test(recipient)) {
-          perform(target, recipient, command);
-        }
+          perform(target, recipient, consequent);
+        } else if (otherwise.length() > 0) {
+          perform(target, recipient, otherwise);
+        };
       } catch (IllegalArgumentException e) {
         target.schedTell(argsToString(0, expression) + " isn't a well formed expression: " + e.getMessage());
       }

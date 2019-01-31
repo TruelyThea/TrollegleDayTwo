@@ -152,14 +152,9 @@ public class ExtendedAdminCommands extends AdminCommands {
         // This is useful in any of my higher-order commands that take other commands as arguments
         // because you might want to perform more than one command on interval or perform more than one command with selected users
         // This command may be stacked to run several commands at once: /.then COMMAND /.then COMMAND /.then COMMAND COMMAND
-        addCommand("then", "then [command] [command]", "Performs both commands. The second command starts at the first argument after the first argument that begins with /. (Thea)", 2,
+        addCommand("then", "then [command] [command]", "Performs both commands. Limitations: no 'textual' /word's in the first command, no /.if + /.else in first command, no user-added commands that take a command in the first command. (Thea)", 2,
                 (args, target) -> {
-                    int index = 1;
-                    for (index = 1; index < args.length; index++)
-                      if (args[index].startsWith("/"))
-                        break;
-                    if (index == args.length)
-                      index = 1;
+                    int index = indexOfSecondCommand(args);
                     m.command(target, String.join(" ", Arrays.copyOfRange(args, 0, index)));
                     m.command(target, argsToString(index, args));
                 }, "andthen");
@@ -236,10 +231,10 @@ public class ExtendedAdminCommands extends AdminCommands {
         // This command will have the caller do the command if the USER satisfies the PREDICATE
         // This command also can be used to see whether a USER exists, with /.if USER 1 /tell yes
         // also replaces $[value]'s with the selected user's properties.
-        addCommand("if", "if USER PREDICATE [command]", "Does the command if the USER satisfies the PREDICATE. (Thea)", 3,
+        addCommand("if", "if USER PREDICATE [command]", "Does the command if the USER exists and satisfies the PREDICATE. Optionally add an /.else after the command to do when the PREDICATE doesn't hold (but the user exists), and possible stacking: /.if USER PRED command /.else /.if USER PRED command /.else command. (Thea)", 3,
                 (args, target) -> {
                   query.ifThen(args, target);
-                }, "onlyif", "ifthen", "withif");
+                }, "onlyif", "ifthen", "withif", "ifelse");
         // Example: /.if NRP ! isAdmin /.then /.d NRP /.g Hello ^^
         // Example: 
         //     /.setLabel doGreet true
@@ -312,6 +307,36 @@ public class ExtendedAdminCommands extends AdminCommands {
         }
         result += "\r\n--end--";
         target.schedTell(result);
+    }
+    
+    private int indexOfSecondCommand(String[] args) {
+      ArrayList<Command> oneArys = new ArrayList<Command>();
+      String[] oneAryNames = {"defer", "interval", "repeat", "addcommand", "foreach", "allwho", "with", "simulate", "if"};
+      for (int i = 0; i < oneAryNames.length; i++)
+        oneArys.add(commands.get(oneAryNames[i]));
+      
+      if (!args[0].startsWith("/"))
+        return 1;
+      
+      int count = 0, index = 0;
+      for (index = 0; index < args.length; index++) {
+          String word = args[index];
+          if (word.startsWith("/")) {
+            if (count == -1) return index;
+            if (word.startsWith("/.")) {
+              String command = word.substring(2).toLowerCase();
+              if (oneArys.contains(commands.get(command)) || oneArys.contains(aliases.get(command)) || command.equals("else"))
+                count += 1 - 1;
+              else if (command.equals("then") || command.equals("andthen"))
+                count += 2 - 1;
+              else
+                count += 0 - 1;
+            } else
+              count += 0 - 1;
+          }
+      }
+      
+      return 1;
     }
     
 }
