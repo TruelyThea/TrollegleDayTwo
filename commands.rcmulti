@@ -1,0 +1,12 @@
+/.addCommand 1s /.pausePulse 1s
+/.addCommand leave /.then /.sl $0 /.setLurk on $0
+/.addCommand singleProxy /.then /.addProxy $0:$1 /.proxyPriority 7 $0:$1
+/.addCommand arrive /.then /.setLurk off $0 /.sj $0
+/.addCommand pr /.singleProxy $0 9999
+/.addCommand trouble /.with 0 /.then /.a U oh! $[name $0] is causing trouble, they're going to be muted. /.mute $0
+/.addCommand randp /.setInterval 15s /.sim $0 /n $[randomPony]
+/.addCommand redeem /.with 0 /.then /.a Wow! $[name $0] has been graciously redeemed, they're coming back to the chat! ^^ /.unmute $0
+/.addCommand eachpr /.forEach $0... /.pr $[value]
+/.addCommand banKick /.with $1 /.if 0 $0 /.ban ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)? /.else /.ban ?off ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)?
+/.addCommand fu /.flashUser
+/.addCommand allowSouls /.if 0 $0 /.ban ?off ?soft ?always ?forever (?i)\s*\/(spam|souls|s|spamon|invite|iq|ic|ii)(\s.*)? /.else /.ban ?soft ?always ?forever (?i)\s*\/(spam|souls|s|spamon|invite|iq|ic|ii)(\s.*)?

@@ -46,8 +46,8 @@ public class ExtendedAdminCommands extends AdminCommands {
           target.schedTell("Did you know that you search for commands whose usage or descriptions contain a phrase or for a command of a specific name?\r\n"
               + "Type \"/.help [phrase/command name]\" to get a shortened help response that only contains relevant commands.\r\n"
               + "Additionally, all of the new commands are marked with the writer's name, so you may type \"/.help Thea\" to get all of my commands.\r\n"
-              + "The best way to learn about the new commands is through the source code, which describes the uses of the commands and shows example usage.\r\n"
-              + "New Admin Commands (see especially the Query Commands section) https://github.com/TruelyThea/TrollegleDayTwo/blob/master/ExtendedAdminCommands.java\r\n"
+              + "The best way to learn about the new commands is reading the documentation, which describes the uses of the commands and shows example usage.\r\n"
+              + "Documentation: https://github.com/TruelyThea/TrollegleDayTwo/blob/master/documentation.md\r\n"
               + "I hope you enjoy using these new features! ^^\r\n"
               + "~Thea");
         });
@@ -139,20 +139,26 @@ public class ExtendedAdminCommands extends AdminCommands {
                         
                         m.command(innertarget, filledCommand + " " + argsToString(from, innerargs));
                       });
-                      target.schedTell("Command added.");
+                      // target.schedTell("Command added.");
                     } else
                       target.schedTell("There is already a command with that name.");
                 }, "command", "setcommand");
                 
         addCommand("commands", "commands", "Lists all of the commands that admins have added. These commands will never show up in /!help searches. (Thea)", 0,
                 (args, target) -> {
-                    listHashTable(target, addedCommands, "command");
+                    Predicate<String> predicate = null;
+                    if (args.length > 0) {
+                      String filter = argsToString(0, args);
+                      predicate = s -> s.contains(filter);
+                    }
+                    listHashTable(target, addedCommands, "command", predicate);
                 }, "listcommands");
         
         // This is useful in any of my higher-order commands that take other commands as arguments
         // because you might want to perform more than one command on interval or perform more than one command with selected users
         // This command may be stacked to run several commands at once: /.then COMMAND /.then COMMAND /.then COMMAND COMMAND
-        addCommand("then", "then [command] [command]", "Performs both commands. Limitations: no 'textual' /word's in the first command, no /.if + /.else in first command, no user-added commands that take a command in the first command. (Thea)", 2,
+        // Limitations: no 'textual' /word's in the first command, no /.if + /.else in first command, no user-added commands that take a command in the first command.
+        addCommand("then", "then [command] [command]", "Performs both commands. (Thea)", 2,
                 (args, target) -> {
                     int index = indexOfSecondCommand(args);
                     m.command(target, String.join(" ", Arrays.copyOfRange(args, 0, index)));
@@ -264,7 +270,12 @@ public class ExtendedAdminCommands extends AdminCommands {
                 
         addCommand("labels", "labels", "Lists all of the labels that admins have added. (Thea)", 0,
                 (args, target) -> {
-                    listHashTable(target, query.getLabels(), "label");
+                    Predicate<String> predicate = null;
+                    if (args.length > 0) {
+                      String filter = argsToString(0, args);
+                      predicate = s -> s.contains(filter);
+                    }
+                    listHashTable(target, query.getLabels(), "label", predicate);
                 }, "listlabels");
         
         addCommand("labelhelp", "labelhelp", "spells out the documentation for labels. (Thea)", 0,
@@ -298,12 +309,15 @@ public class ExtendedAdminCommands extends AdminCommands {
         sanityCheck();
     }
     
-    private void listHashTable(MultiUser target, Hashtable<String, String> hash, String type) {
+    private void listHashTable(MultiUser target, Hashtable<String, String> hash, String type, Predicate<String> predicate) {
+        if (predicate == null) predicate = s -> true;
         Enumeration<String> keys = hash.keys();
-        String result = "Here are your added " + type + "s:", key;
+        String result = "Here are your added " + type + "s:", key, value;
         while (keys.hasMoreElements()) {
           key = keys.nextElement();
-          result += "\r\n" + key + ": " + hash.get(key);
+          value = hash.get(key);
+          if (predicate.test(value) || predicate.test(key))
+            result += "\r\n" + key + ": " + value;
         }
         result += "\r\n--end--";
         target.schedTell(result);
