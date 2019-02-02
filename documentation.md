@@ -99,7 +99,7 @@ This command sets `NAME` as a token meaning the given expression. Of course the 
 
 *Aliases:* `/.label`, `/.addLabel`
 
-####`/.labels [filter]` ####
+#### `/.labels [filter]` ####
 
 This command lists the labels that admins have added. Optionally if filter is provided, only labels whose names or values contain the filter will be listed.
 
