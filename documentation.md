@@ -78,8 +78,10 @@ This command queries all users who satisfy the predicate, then has the caller pe
 This command will check whether the specified user satisfies the predicate. If they exist and do, it will have the caller perform the command after replacing `$[value]`'s. Else if the optional `/.else` and the user exists, it will have the caller perform the second command after replacing `$[value]`s. This command can also be used to test whether a user exists:
 
     /.if USER true /tell $[nick] exists
+    
+The easiest way to do such a test, though is to simply `/id` the user.
 
-Else is a pseudo-command. To escape `/.else` type `/..else`, to escape `/..else` type `/...else`, and so on.
+`/.else` is a pseudo-command. To escape `/.else` type `/..else`, to escape `/..else` type `/...else`, and so on.
 
 *Note:* The `/.else` will not bind tightly, which is not preferable, actually. So,
 
