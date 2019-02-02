@@ -98,7 +98,7 @@ public class ExtendedAdminCommands extends AdminCommands {
                     for (int i = 0; i < times; i++) m.command(target, commands);
                     
                     target.schedTell("Completed the repetition");
-                }, "rep");
+                }, "rep", "times");
         
         addCommand("addcommand", "addcommand COMMAND [command]", "Makes /!COMMAND a shorthand for [command]. [command] may be an entire command, an initial segment for args to be appended to, or allow the first few args to fill where $0 $1 $2, ... appear. Escape $d... though $0d.... Additionally you may use ... after an arg like '$0...' to get all the arguments from that one (rest operator). (Thea)", 2,
         //"Makes the initial segment of a command available for easy calling. This may be the entire command or may be a proper initial segment that accepts arguments. Use the /. or /! notation. (Thea)", 2,

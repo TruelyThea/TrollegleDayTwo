@@ -171,7 +171,7 @@ public class QueryStuff {
         if (recipient == null)
           target.schedTell("User " + args[i] + " couldn't be found.");
         else if (recipient.isDummy())
-          target.schedTell("No /.simulating console terminal calls :/");
+          target.schedTell("No /.simulate'ing console terminal calls :/");
         else
           perform(recipient, recipient, command);
       }

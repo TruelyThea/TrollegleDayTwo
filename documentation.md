@@ -79,7 +79,7 @@ This command will check whether the specified user satisfies the predicate. If t
 
     /.if USER true /tell $[nick] exists
     
-The easiest way to do such a test, though is to simply `/id` the user.
+The easiest way to do such a test, though, is to simply `/id` the user.
 
 `/.else` is a pseudo-command. To escape `/.else` type `/..else`, to escape `/..else` type `/...else`, and so on.
 
@@ -181,7 +181,7 @@ This command makes the caller preform the command on each element of the list. `
 
 This command simply repeats the command TIMES times.
 
-*Aliases:* `/.rep`
+*Aliases:* `/.rep`, `/.times`
 
 ## Misc. Commands ##
 
@@ -200,8 +200,6 @@ This command makes the caller say the phrase, regardless of whether it looks lik
 #### <a name="noop"></a> `/.noop ARGS...` ####
 
 Does nothing and simply ignores the given arguments. This is useful in `/.addCommand` when you want to ignore the appended arguments by using `/.addCommand NAME /.then <actual command> /.noop`.
-
-*Aliases:* `/say`
 
 #### `/.extendedHelp` ####
 
