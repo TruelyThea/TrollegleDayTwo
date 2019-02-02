@@ -25,6 +25,7 @@ Misc. Commands
 
 * [tell](#tell)
 * [say](#say)
+* [noop](#noop)
 
 [Timers](#timers)
 
@@ -191,6 +192,12 @@ This command relays the phrase to the caller. This is useful within a `/.with` o
 #### <a name="say"></a> `/.say <phrase>` ####
 
 This command makes the caller say the phrase, regardless of whether it looks like a command. This is useful for allowing a simulation of a normal message in `/.simulate USER /say` or just for use in higher-order commands in general. Also it can be used for saying messages that would otherwise be interpreted as a command.
+
+*Aliases:* `/say`
+
+#### <a name="noop"></a> `/.noop ARGS...` ####
+
+Does nothing and simply ignores the given arguments. This is useful in `/.addCommand` when you want to ignore the appended arguments by using `/.addCommand NAME /.then <actual command> /.noop`.
 
 *Aliases:* `/say`
 

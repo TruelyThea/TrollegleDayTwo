@@ -169,6 +169,11 @@ public class ExtendedAdminCommands extends AdminCommands {
                 (args, target) -> {
                     query.each(args, target);
                 }, "each");
+                
+        addCommand("noop", "noop ARGS...", "Ignores the arguments (Thea)", 2,
+                (args, target) -> {
+                    return;
+                });
         
         // The following three commands are duplicated from ExtendedUserBehavior.java to allow both the /!command and /command notations.
         // The comments are presented only here.
