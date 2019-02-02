@@ -2,7 +2,38 @@
 
 This library is an extension to the standard code. You can add it by copying the files into `anon/trollegle` and compiling normally. Unless there are *extreme* changes in the standard code, this library should remain compatible.
 
-## Query Commands ##
+## Selected Table of Contents ##
+
+[Query Commands](#query)
+
+* [with](#with)
+* [simulate](#simulate)
+* [allWho](#allwho)
+* [if](#if)
+
+[Labels](#labels)
+
+Higher-order Commands
+
+* [then](#then)
+* [addCommand](#addcommand)
+  * [commands](#commands)
+* [forEach](#foreach)
+* [repeat](#repeat)
+
+Misc. Commands
+
+* [tell](#tell)
+* [say](#say)
+
+[Timers](#timers)
+
+[Examples](#examples)
+
+[General Information](#general)
+
+
+## <a name="query"></a> Query Commands ##
 
 The query commands all query users and provide other commands access to their properties.
 
@@ -22,26 +53,26 @@ The `$[value]`s are replaced by the properties of the user in the outermost scop
 
 will make the admin announce NRP's and Thea's properties.
 
-### `/.with USER... <command>` ###
+#### <a name="with"></a> `/.with USER... <command>` ####
 
 This command queries the user(s) with USER nick or id number, then for each given user, the caller will perform the given command after replacing the `$[value]`'s. There are two uses of this command:
 
 1. Do a command after substituting user's properties
 2. Provide one query command with another user's properties by prepending a `/.with USER` to an `/.allWho` or a `/.simulate`.
 
-### `/.simulate USER... <command>` ###
+#### <a name="simulate"></a> `/.simulate USER... <command>` ####
 
 Like `/.with`, `/.simulate` queries user(s) by nick or id. However, `/.simulate` has the selected users perform the command, after replacing `$[value]`'s with their own properties.
 
 *Aliases:* `/.sim`
 
-### `/.allWho <predicate> <command>` ###
+#### <a name="allwho"></a> `/.allWho <predicate> <command>` ####
 
 This command queries all users who satisfy the predicate, then has the caller perform the command after replacing `$[value]`'s.
 
 *Aliases:* `/.all`, `/.filter`, `/.withAll`, `/.withAllWho`
 
-### `/.if USER <predicate> <command> [/.else <command>]` ###
+#### <a name="if"></a> `/.if USER <predicate> <command> [/.else <command>]` ####
 
 This command will check whether the specified user satisfies the predicate. If they exist and do, it will have the caller perform the command after replacing `$[value]`'s. Else if the optional `/.else` and the user exists, it will have the caller perform the second command after replacing `$[value]`s. This command can also be used to test whether a user exists:
 
@@ -58,23 +89,23 @@ won't work as expected. It will assume that the first `/.else` is associated wit
 
 *Aliases:* `/.onlyIf`, `/.ifThen`, `/.withIf`, `/.ifElse`
 
-## Labels ##
+## <a name="labels"></a> Labels ##
 
 See the note about Polish expressions in Query Commands.
 
-### `/.setLabel NAME <expression>` ###
+#### `/.setLabel NAME <expression>` ####
 
 This command sets `NAME` as a token meaning the given expression. Of course the expression must be in proper Polish form, as described above.
 
 *Aliases:* `/.label`, `/.addLabel`
 
-### `/.labels [filter]` ###
+####`/.labels [filter]` ####
 
 This command lists the labels that admins have added. Optionally if filter is provided, only labels whose names or values contain the filter will be listed.
 
 *Aliases:* `/.listLabels`
 
-### `/.labelHelp` ###
+#### `/.labelHelp` ####
 
 This command tells which tokens (labels) and `$[value]`'s are available, and tells some (incomplete) documentation.
 
@@ -85,7 +116,7 @@ This command tells which tokens (labels) and `$[value]`'s are available, and tel
 A higher-order command takes another command as an argument. The query commands and timer commands are also higher order commands.
 
 
-### `/.then <command> <command>` ###
+#### <a name="then"></a> `/.then <command> <command>` ####
 
 This command will perform the the two commands in order, after parsing the commands to determine where they are separated. This command may be stacked: `/.then <command> /.then <command> <command>` or `/.then /.then <command> <command> <command>`.
 
@@ -109,7 +140,7 @@ With `/.then /.with 0 /tell $[patCount] /tell done.`, there is a unique way to p
 
 *Aliases:* `/.andThen`
 
-### `/.addCommand NAME <command>` ###
+#### <a name="addcommand"></a> `/.addCommand NAME <command>` ####
 
 In the simplest case, command is an entire command, without argument interpolation. Then `/!COMMAND` and `/.COMMAND` are simply a shorthand for `<command>`.
 
@@ -127,13 +158,13 @@ Additionally, a rest operator (`...`) is available to get all the arguments that
 
 *Aliases:* `/.command`, `/.setCommand`
 
-### `/.commands [filter]` ###
+#### <a name="commands"></a> `/.commands [filter]` ####
 
 This command lists the commands that were added through `/.addCommand`. Optionally if filter is provided, only commands whose names or values contain the filter will be listed.
 
 *Aliases:* `.listCommands`
 
-### `/.forEach LIST... <command>` ###
+#### <a name="foreach"></a> `/.forEach LIST... <command>` ####
 
 This command makes the caller preform the command on each element of the list. `$[value]`'s are filled like a query command, but only functional values (`$`, `choose`, `interpolate`, `name`, `id`) and the special values: `index`, `value`, `collection` are accepted.
 
@@ -143,7 +174,7 @@ This command makes the caller preform the command on each element of the list. `
 
 *Aliases:* `/.each`
 
-### `/.repeat TIMES <command>` ###
+#### <a name="repeat"></a> `/.repeat TIMES <command>` ####
 
 This command simply repeats the command TIMES times.
 
@@ -151,69 +182,69 @@ This command simply repeats the command TIMES times.
 
 ## Misc. Commands ##
 
-### `/.tell <phrase>` ###
+#### <a name="tell"></a> `/.tell <phrase>` ####
 
 This command relays the phrase to the caller. This is useful within a `/.with` or `/.allWho` to see a user's properties.
 
 *Aliases:* `/tell`
 
-### `/.say <phrase>` ###
+#### <a name="say"></a> `/.say <phrase>` ####
 
 This command makes the caller say the phrase, regardless of whether it looks like a command. This is useful for allowing a simulation of a normal message in `/.simulate USER /say` or just for use in higher-order commands in general. Also it can be used for saying messages that would otherwise be interpreted as a command.
 
 *Aliases:* `/say`
 
-### `/.extendedHelp` ###
+#### `/.extendedHelp` ####
 
 Tells you all the secrets.
 
-## Timer Commands ##
+## <a name="timers"></a> Timer Commands ##
 
-### `/.defer TIME <command>` ###
+#### `/.defer TIME <command>` ####
 
 Waits TIME before executing the command. TIME may be a number of milliseconds or of the form `1s`, `2m`, `10h`, etc.
 
 *Aliases:* `/.delay`, `/.setDefer`
 
-### `/.defers` ###
+#### `/.defers` ####
 
 List the currently scheduled defers with their ids.
 
 *Aliases:* `/.listDefers`
 
-### `/.cancelDefer [ID]` ### 
+#### `/.cancelDefer [ID]` #### 
 
 Cancels the defer at id if given, or all the defers if not.
 
 *Aliases:* `/.cancelDefers`, `/.clearDefer`, `/.clearDefers`
 
-### `/.interval TIME <command>` ###
+#### `/.interval TIME <command>` ####
 
 Repeats the command every TIME time. TIME may be a number of milliseconds or of the form `1s`, `2m`, `10h`, etc. It also tells you the id of the interval.
 
 *Aliases:* `/.setInterval`, `/.int`
 
-### `/.intervals` ###
+#### `/.intervals` ####
 
 List currently scheduled intervals with their ids.
 
 *Aliases:* `/.listIntervals`
 
-### `/.cancelInterval [ID]` ###
+#### `/.cancelInterval [ID]` ####
 
 Cancels the interval at id if given, or all the intervals if not.
 
 *Aliases:* `/.cancelIntervals`, `/.clearInterval`, `/.clearIntervals`
 
-## Examples ##
+## <a name="examples"></a> Examples ##
 
 *TODO* (For now you can look at the examples in `ExtendedAdminCommands.java` if you want.)
 
-## General Information ##
+## <a name="general"></a> General Information ##
 
 *TODO* allow `hugCount`, commands, and labels to be saved in `/.saveAndKill` and then loaded in `--json FILE`
 
-### About this repository ###
+#### About this repository ####
 
 I want this project to be a public endeavor. ^^
 
