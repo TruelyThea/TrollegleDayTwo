@@ -50,9 +50,9 @@ These commands take another command as an argument and occurrences of `$[value]`
 
 The `$[value]`s are replaced by the properties of the user in the outermost scope (because they are replaced immediately before inner commands run), unless an inner scope is placed within a custom `/.addCommand` command, which "starts the inner command afresh" before interpolations have been made. So
 
-    /.with NRP Thea /.sim 0 /.a $[nick] has $[patCount] pats.
+    /.with NRP Thea /.sim 1 /.a $[nick] has $[patCount] pats.
 
-will make the admin announce NRP's and Thea's properties.
+will make the user with id `1` announce NRP's and Thea's properties.
 
 #### <a name="with"></a> `/.with USER... <command>` ####
 
@@ -64,6 +64,8 @@ This command queries the user(s) with USER nick or id number, then for each give
 #### <a name="simulate"></a> `/.simulate USER... <command>` ####
 
 Like `/.with`, `/.simulate` queries user(s) by nick or id. However, `/.simulate` has the selected users perform the command, after replacing `$[value]`'s with their own properties.
+
+As a security measure, you cannot `/.simulate` console terminal command calls.
 
 *Aliases:* `/.sim`
 
@@ -255,6 +257,8 @@ Cancels the interval at id if given, or all the intervals if not.
 
 I want this project to be a public endeavor. ^^
 
-* If you spot a typo or bug, you can add an issue to the repository.
+* If you spot a typo, bug, issue, or improvement, you can add an issue to the repository.
 * If you tackle one of the TODOs, by all means make a pull request, and I will look at it. 
 * If you want to add a new feature, add an issue to this repository and we can discuss a pull request.
+
+Here's an email `theatruely@gmail.com`, which forwards messages to my regular email.
