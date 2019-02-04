@@ -1,12 +1,40 @@
 /.addCommand 1s /.pausePulse 1s
-/.addCommand leave /.then /.sl $0 /.setLurk on $0
-/.addCommand singleProxy /.then /.addProxy $0:$1 /.proxyPriority 7 $0:$1
-/.addCommand arrive /.then /.setLurk off $0 /.sj $0
-/.addCommand pr /.singleProxy $0 9999
-/.addCommand trouble /.with 0 /.then /.a U oh! $[name $0] is causing trouble, they're going to be muted. /.mute $0
+
 /.addCommand randp /.setInterval 15s /.sim $0 /n $[randomPony]
+
+# /.arrive|leave USER
+/.addCommand leave /.then /.sl $0 /.setLurk on $0
+/.addCommand arrive /.then /.setLurk off $0 /.sj $0
+
+# /.trouble|redeem USER
+/.addCommand trouble /.with 0 /.then /.a U oh! $[name $0] is causing trouble, they're going to be muted. /.mute $0
 /.addCommand redeem /.with 0 /.then /.a Wow! $[name $0] has been graciously redeemed, they're coming back to the chat! ^^ /.unmute $0
-/.addCommand eachpr /.forEach $0... /.pr $[value]
-/.addCommand banKick /.with $1 /.if 0 $0 /.ban ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)? /.else /.ban ?off ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)?
+
 /.addCommand fu /.flashUser
+
+# /.hugEach USERS... (up to 13 users)
+/.addCommand __laterDo__ /.with 0 /.defer $[pluck $1 0 6 12 18 24 30 36 42 48 54 60 66 72]s /$0 $2
+/.addCommand __doEach__ /.forEach $1... /.__laterDo__ $0 $[index] $[value]
+/.addCommand hugEach /.__doEach__ hug $0...
+/.addCommand patEach /.__doEach__ pat $0...
+/.addCommand stabEach /.__doEach__ stab $0...
+
+# BANS
+
+# /.allowSouls true|false
 /.addCommand allowSouls /.if 0 $0 /.ban ?off ?soft ?always ?forever (?i)\s*\/(spam|souls|s|spamon|invite|iq|ic|ii)(\s.*)? /.else /.ban ?soft ?always ?forever (?i)\s*\/(spam|souls|s|spamon|invite|iq|ic|ii)(\s.*)?
+
+# /.banKick true|false USERS...
+/.addCommand banKick /.with $1... /.if $[number] $0 /.ban ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)? /.else /.ban ?off ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)?
+
+#PROXIES (PORT 9999 proxies seem to work the best)
+
+# /.singleProxy HOST PORT or /.singleProxy HOST:PORT
+# There's a problem with "/.addProxy HOST:" so now "/.addProxy $0 $1" will give a proper error response for "/.singleProxy HOST"
+/.addCommand singleProxy /.then /.addProxy $0 $1 /.proxyPriority 7 $0 $1
+
+# /.pr HOST
+/.addCommand pr /.singleProxy $0 9999
+
+# /.eachpr HOSTS...
+/.addCommand eachpr /.forEach $0... /.pr $[value]

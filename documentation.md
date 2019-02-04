@@ -45,6 +45,7 @@ These commands take another command as an argument and occurrences of `$[value]`
 * `$[$]` always yields `$`, so `$[$][text]` can be used to escape `$[text]`. Also, placing only space in the brackets will produce a `$`.
 * `$[choose ARGS...]` randomly chooses one of the space-delimited arguments to interpolate.
 * `$[interpolate <text>]` will simply interpolate the given text.
+* `$[pluck INDEX LIST...]` will return the value at the specified index.
 * `$[name USER]` will try to look up the nickname of the user.
 * `$[id USER]` will try to look up the numerical id of the user
 
@@ -91,6 +92,7 @@ The easiest way to do such a test, though, is to simply `/id` the user.
 
 won't work as expected. It will assume that the first `/.else` is associated with the first `/.if`. Regular `/.if ... /.else /.if ... /.else /.if ...` nesting should work as expected, though. 
 *Todo:* Fix this.
+*Immediate Fix:* You could wrap the inner `/.if ... /.else` block in a command added through `/.addCommand`.
 
 *Aliases:* `/.onlyIf`, `/.ifThen`, `/.withIf`, `/.ifElse`
 
@@ -137,6 +139,8 @@ With `/.then /.with 0 /tell $[patCount] /tell done.`, there is a unique way to p
 2. In commands added at run-time, currently there is no way to determine how many commands they take, so they are assumed to take no commands, if they are given as the first argument.
 3. Additionally, currently there is no check for whether an `/.if` has an `/.else`, which changes how many commands `/.if` takes. So, `/.else` cannot be used in the first argument.
 
+*Immediate Solution:* Often, you might be able to get around these problems by defining another command with `/.addCommand` to wrap part of the first command given to `/.then`.
+
 *Todo:* 
 
 * Add back tracking if an `/.else` is found to allow `/.else` pseudo-commands in the first command.
@@ -171,7 +175,7 @@ This command lists the commands that were added through `/.addCommand`. Optional
 
 #### <a name="foreach"></a> `/.forEach LIST... <command>` ####
 
-This command makes the caller preform the command on each element of the list. `$[value]`'s are filled like a query command, but only functional values (`$`, `choose`, `interpolate`, `name`, `id`) and the special values: `index`, `value`, `collection` are accepted.
+This command makes the caller preform the command on each element of the list. `$[value]`'s are filled like a query command, but only functional values (`$`, `choose`, `interpolate`, `pluck`, `name`, `id`) and the special values: `index`, `value`, `collection` are accepted.
 
 * `$[index]` gives the integer representation of the current index in the loop iteration.
 * `$[value]` gives the current value in the loop iteration.

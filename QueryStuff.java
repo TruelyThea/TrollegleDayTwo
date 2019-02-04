@@ -108,6 +108,18 @@ public class QueryStuff {
        
         funs.put("choose", (p, args) -> args.length == 0 ? "" : args[(int) Math.floor(Math.random()*(double)args.length)]);
         funs.put("interpolate", (p, args) -> argsToString(0, args));
+        funs.put("pluck", (p, args) -> {
+          if (args.length == 0)
+            return "";
+          try {
+            int index = Integer.parseInt(args[0]) + 1;
+            if (index < 1 || index >= args.length)
+              return "[IllegalArgumentException]";
+            return args[index];
+          } catch (NumberFormatException e) {
+            return "[NotANumberException]";
+          }
+        });
         funs.put("$", (__, ___) -> "$");
         funs.put("name", (p, args) -> {
           if (args.length == 0) return "";
