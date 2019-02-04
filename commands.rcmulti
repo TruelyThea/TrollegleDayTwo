@@ -25,9 +25,10 @@
 # /.fruit .forEach /tell $[value]
 # /.append fruit apple orange
 # /.fruit .forEach /tell $[value]
+# /.fruit .tell
 /.addCommand initiateList /.addCommand $0 /$00 $1...
 /.addCommand append /.then /.addCommand __append__ /.initiateList $0 /.$0 .__append__ $1...
-/.addCommand List /.initiateList
+# /.addCommand List /.initiateList
 
 # /.initiateList admins NRP Ilse Thea tajweed29 Quinn
 # /.admins .withEach /tell $[nick]
@@ -35,6 +36,9 @@
 # /.admins .withEach /tell $[nick]
 /.addCommand __filter__ /.$0 .forEach /.if $[value] $1... /.append __copy__ $[value]
 /.addCommand filter /.then /.initiateList __copy__ /.then /.__filter__ $0... /.then /.addCommand __set__ /.initiateList $0 /.__copy__ .__set__
+
+# /.shift admins
+/.addCommand shift /.then /.addCommand __append__ /.initiateList $0 $01... /.$0 .__append__ $1...
 
 # BANS
 
