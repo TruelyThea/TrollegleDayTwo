@@ -19,6 +19,14 @@
 /.addCommand patEach /.__doEach__ pat $0...
 /.addCommand stabEach /.__doEach__ stab $0...
 
+# ARRAYS !!!!
+# /.initiateList fruit mango pineapple banana
+# /.fruit .forEach /tell $[value]
+# /.append fruit apple orange
+# /.fruit .forEach /tell $[value]
+/.addCommand initiateList /.addCommand $0 /$00 $1...
+/.addCommand append /.then /.addCommand __append__ /.initiateList $0 /.$0 .__append__ $1...
+
 # BANS
 
 # /.allowSouls true|false
@@ -27,7 +35,7 @@
 # /.banKick true|false USERS...
 /.addCommand banKick /.with $1... /.if $[number] $0 /.ban ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)? /.else /.ban ?off ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)?
 
-#PROXIES (PORT 9999 proxies seem to work the best)
+# PROXIES (PORT 9999 proxies seem to work the best)
 
 # /.singleProxy HOST PORT or /.singleProxy HOST:PORT
 # There's a problem with "/.addProxy HOST:" so now "/.addProxy $0 $1" will give a proper error response for "/.singleProxy HOST"
