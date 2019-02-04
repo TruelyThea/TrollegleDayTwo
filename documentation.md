@@ -62,6 +62,8 @@ This command queries the user(s) with USER nick or id number, then for each give
 1. Do a command after substituting user's properties
 2. Provide one query command with another user's properties by prepending a `/.with USER` to an `/.allWho` or a `/.simulate`.
 
+*Aliases:* `/.withEach`
+
 #### <a name="simulate"></a> `/.simulate USER... <command>` ####
 
 Like `/.with`, `/.simulate` queries user(s) by nick or id. However, `/.simulate` has the selected users perform the command, after replacing `$[value]`'s with their own properties.
@@ -74,7 +76,7 @@ As a security measure, you cannot `/.simulate` console terminal command calls.
 
 This command queries all users who satisfy the predicate, then has the caller perform the command after replacing `$[value]`'s.
 
-*Aliases:* `/.all`, `/.filter`, `/.withAll`, `/.withAllWho`
+*Aliases:* `/.all`, `/.withAll`, `/.withAllWho`
 
 #### <a name="if"></a> `/.if USER <predicate> <command> [/.else <command>]` ####
 

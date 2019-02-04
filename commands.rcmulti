@@ -20,12 +20,21 @@
 /.addCommand stabEach /.__doEach__ stab $0...
 
 # ARRAYS !!!!
+
 # /.initiateList fruit mango pineapple banana
 # /.fruit .forEach /tell $[value]
 # /.append fruit apple orange
 # /.fruit .forEach /tell $[value]
 /.addCommand initiateList /.addCommand $0 /$00 $1...
 /.addCommand append /.then /.addCommand __append__ /.initiateList $0 /.$0 .__append__ $1...
+/.addCommand List /.initiateList
+
+# /.initiateList admins NRP Ilse Thea tajweed29 Quinn
+# /.admins .withEach /tell $[nick]
+# /.filter admins && isVerbose doesShowNumbers
+# /.admins .withEach /tell $[nick]
+/.addCommand __filter__ /.$0 .forEach /.if $[value] $1... /.append __copy__ $[value]
+/.addCommand filter /.then /.initiateList __copy__ /.then /.__filter__ $0... /.then /.addCommand __set__ /.initiateList $0 /.__copy__ .__set__
 
 # BANS
 

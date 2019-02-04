@@ -219,7 +219,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         addCommand("allwho", "allwho PREDICATE [command]", "Does the command with all users who satisfy the PREDICATE. In [command], use $[value] to get a value of the user. (Thea)", 2,
                 (args, target) -> {
                   query.allWho(args, target);
-                }, "all", "filter", "withall", "withallwho");
+                }, "all", "withall", "withallwho");
         // Example: /.allwho || isVerbose isAdmin /.apm $[number] you either are an admin or want to be an admin ^^
         // Example: /.allwho ALL /.apm $[number] $[nick], your pat count is currently $[patCount].
         
@@ -234,7 +234,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         addCommand("with", "with USER... [command]", "Does the command with every USER; you are still the target (caller). In [command], use $[value] to get a value of the USER. (Thea)", 2,
                 (args, target) -> {
                   query.with(args, target);
-                });
+                }, "witheach");
         // Example: /.with NRP CL Bibi PUB 0 /.apm $[number] Your pat count is currently at $[patCount] and your hug count is currently at $[hugCount]
         // Example: /.with 0 /say The admin currently has only $[patCount] pats.
         
