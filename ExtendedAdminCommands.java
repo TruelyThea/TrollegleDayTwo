@@ -97,7 +97,7 @@ public class ExtendedAdminCommands extends AdminCommands {
                     
                     for (int i = 0; i < times; i++) m.command(target, commands);
                     
-                    target.schedTell("Completed the repetition");
+                    // target.schedTell("Completed the repetition");
                 }, "rep", "times");
         
         addCommand("addcommand", "addcommand COMMAND [command]", "Makes /!COMMAND a shorthand for [command]. [command] may be an entire command, an initial segment for args to be appended to, or allow the first few args to fill where $0 $1 $2, ... appear. Escape $d... though $0d.... Additionally you may use ... after an arg like '$0...' to get all the arguments from that one (rest operator). (Thea)", 2,
@@ -170,7 +170,12 @@ public class ExtendedAdminCommands extends AdminCommands {
                     query.each(args, target);
                 }, "each");
                 
-        addCommand("noop", "noop ARGS...", "Ignores the arguments (Thea)", 2,
+      addCommand("ifareequal", "ifAreEqual WORD1 WORD2 <command> [/.else <command>]", "Performs the command if the words are equal. (Thea)", 2,
+                (args, target) -> {
+                    query.ifAreEqual(args, target);
+                }, "ifequals", "equals");
+                
+        addCommand("noop", "noop ARGS...", "Ignores the arguments (Thea)", 0,
                 (args, target) -> {
                     return;
                 });
@@ -242,7 +247,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         // This command will have the caller do the command if the USER satisfies the PREDICATE
         // This command also can be used to see whether a USER exists, with /.if USER 1 /tell yes
         // also replaces $[value]'s with the selected user's properties.
-        addCommand("if", "if USER PREDICATE [command]", "Does the command if the USER exists and satisfies the PREDICATE. Optionally add an /.else after the command to do when the PREDICATE doesn't hold (but the user exists), and possible stacking: /.if USER PRED command /.else /.if USER PRED command /.else command. (Thea)", 3,
+        addCommand("if", "if USER PREDICATE <command> [/.else <command>]", "Does the command if the USER exists and satisfies the PREDICATE. Optionally add an /.else after the command to do when the PREDICATE doesn't hold (but the user exists), and possible stacking: /.if USER PRED command /.else /.if USER PRED command /.else command. (Thea)", 3,
                 (args, target) -> {
                   query.ifThen(args, target);
                 }, "onlyif", "ifthen", "withif", "ifelse");
@@ -330,7 +335,7 @@ public class ExtendedAdminCommands extends AdminCommands {
     
     private int indexOfSecondCommand(String[] args) {
       ArrayList<Command> oneArys = new ArrayList<Command>();
-      String[] oneAryNames = {"defer", "interval", "repeat", "addcommand", "foreach", "allwho", "with", "simulate", "if"};
+      String[] oneAryNames = {"defer", "interval", "repeat", "addcommand", "foreach", "allwho", "with", "simulate", "if", "ifareequal"};
       for (int i = 0; i < oneAryNames.length; i++)
         oneArys.add(commands.get(oneAryNames[i]));
       

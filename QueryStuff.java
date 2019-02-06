@@ -227,7 +227,7 @@ public class QueryStuff {
       try {
         labels.put(args[0], Arrays.copyOfRange(args, 1, args.length));
         addedLabels.put(args[0], argsToString(1, args));
-        target.schedTell("Label Added.");
+        // target.schedTell("Label Added.");
       } catch (IllegalArgumentException e) {
         target.schedTell("There was a problem parsing your label: " + e.getMessage());
       }
@@ -327,6 +327,30 @@ public class QueryStuff {
         });
         
         m.command(target, filled);
+      }
+    }
+    
+    public void ifAreEqual(String[] args, MultiUser target) {
+      // defaults to one USER and a one-token expression the command starts on the third arg
+      int index = 2;
+      
+      int i = index + 1;
+      for (i = index + 1; i < args.length; i++) {
+        if (args[i].toLowerCase().equals("/.else"))
+          break;
+      }
+      
+      // To un-escape /..else to /.else and /...else to /..else ...
+      Function<String, String> unescape = s -> "/" + s.substring(2);
+      String match = "(?i)(\\/\\.{2,}else)";
+      
+      String consequent = replace(argsToString(0, Arrays.copyOfRange(args, index, i)), match, unescape);
+      String otherwise = replace(argsToString(i + 1, args), match, unescape);
+      
+      if (args[0].equals(args[1])) {
+        m.command(target, consequent);
+      } else if (otherwise.length() > 0) {
+        m.command(target, otherwise);
       }
     }
 }

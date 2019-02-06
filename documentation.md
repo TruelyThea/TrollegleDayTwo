@@ -19,6 +19,7 @@ Higher-order Commands
 * [addCommand](#addcommand)
   * [commands](#commands)
 * [forEach](#foreach)
+* [ifAreEqual](#equals)
 * [repeat](#repeat)
 
 Misc. Commands
@@ -28,6 +29,8 @@ Misc. Commands
 * [noop](#noop)
 
 [Timers](#timers)
+
+[Arrays](#arrays)
 
 [Examples](#examples)
 
@@ -185,11 +188,25 @@ This command makes the caller preform the command on each element of the list. `
 
 *Aliases:* `/.each`
 
+#### <a name="equals"></a> `/.ifAreEqual WORD1 WORD2 <command> [/.else <command>]` ####
+
+The structure of this command is similar to `/.if`, except it predicates the command on a string equality check. It is not a query command and does not fill `$[value]`'s.
+
+*Aliases:* `/.ifEquals`, `/.equals`
+
 #### <a name="repeat"></a> `/.repeat TIMES <command>` ####
 
 This command simply repeats the command TIMES times.
 
 *Aliases:* `/.rep`, `/.times`
+
+#### <a name="once"></a> `/.once NAME <command>` ####
+
+This command makes makes a command with the given name that can be called only once.
+
+This command is included in `commands.rcmuli`, and is not written in Java: 
+
+    /.addCommand once /.then /.setLabel __notDone$0__ 1 /.addCommand $0 /.if 0 __notDone$0__ /.then /.setLabel __notDone$0__ 0 $1...
 
 ## Misc. Commands ##
 
@@ -207,7 +224,7 @@ This command makes the caller say the phrase, regardless of whether it looks lik
 
 #### <a name="noop"></a> `/.noop ARGS...` ####
 
-Does nothing and simply ignores the given arguments. This is useful in `/.addCommand` when you want to ignore the appended arguments by using `/.addCommand NAME /.then <actual command> /.noop`.
+Does nothing and simply ignores the given arguments. This is useful in `/.addCommand` when you want to ignore the appended arguments by using `/.addCommand NAME /.then <actual command> /.noop`, and in `/.ifAreEqual WORD1 WORD2 /.noop /.else <command>` if you only want to do something when the words are different.
 
 #### `/.extendedHelp` ####
 
@@ -250,6 +267,93 @@ List currently scheduled intervals with their ids.
 Cancels the interval at id if given, or all the intervals if not.
 
 *Aliases:* `/.cancelIntervals`, `/.clearInterval`, `/.clearIntervals`
+
+## <a name="arrays"></a> Arrays ##
+
+The Array/List implementation is included in `commands.rcmuli` and is not written in Java. It is made possible by the expressiveness of `/.addCommand`. See `commands.rcmulti` for examples.
+
+#### `/.Array NAME ITEMS...` ####
+
+Creates a (non-empty, by a quark) array of the given values.
+
+    /.addCommand initiateList /.addCommand $0 /$00 $1... $01...
+    /.addCommand Array /.initiateList
+
+Calling `.forEach <command>`, `.withEach <command>`, `.simulate <command>`, `.tell`, or `.say` after `/.ARRAY` does the command with the array's members.
+
+#### `/.empty NAME` ####
+
+Creates an empty array of the given values, or empties an existing array.
+
+    /.addCommand emptyList /.addCommand $0 /$00 $01...
+    /.forEach emptyArray empty clear /.addCommand $[value] /.emptyList
+    
+#### `/.copy ARRAY NAME [ITEMS...]` ####
+
+Copies the data of the given array into the given name, optionally appending the items onto the new array.
+    
+    /.addCommand copy /.then /.addCommand __c__ /.initiateList $1 /.$0 .__c__ $2...
+
+#### `/.append ARRAY ITEMS...` ####
+
+Appends the given items onto the array.
+
+    /.addCommand append /.copy $0 $0 $1...
+
+#### `/.shift ARRAY [ITEMS...]` ####
+
+Removes the first element of the array, optionally appending the given items.
+
+    /.addCommand shift /.then /.addCommand __s__ /.initiateList $0 $01... /.$0 .__s__ $1...
+
+#### `/.map ARRAY NAME <expression>` ####
+
+Transforms the members of the given array into the form given by the expression. The results are stored in the given name. The expression specifies the form of the resulting value(s). It may use any `$[value]` available in `.forEach`.
+
+    /.addCommand map /.then /.emptyList $1 /.$0 .forEach /.append $1 $2...
+    /.forEach collect transform /.addCommand $[value] /.map
+
+#### `/.length ARRAY <command>` ####
+
+Performs the given command after `$[value]` is filled with the length of the array.
+
+    /.addCommand __setup__ /.then /.initiateList __cur__ 0 /.copy $0 __cpy__ end 
+    /.addCommand __length__ /.__cpy__ .forEach /.initiateList __cur__ $[index]
+    /.addCommand length /.then /.__setup__ $0 /.then /.__length__ /.__cur__ .forEach $1...
+
+#### `/.string ARRAY <command>` ####
+
+Performs the given command after `$[collection]` is filled with a string-ified version of the array.
+
+    /.addCommand string /.then /.setLabel __done__ 0 /.$0 .forEach /.if 0 ! __done__ /.then /.setLabel __done__ 1 $1...
+
+#### `/.pluck ARRAY INDEX <command>` ####
+
+Performs the given command after `$[value]` is replaced by the value at the given index.
+
+    /.addCommand pluck /.$0 .forEach /.ifAreEqual $[index] $1 $2...
+
+#### `/.remove ARRAY VALUE [ITEMS]` ####
+
+Removes the first occurance of the value in the array, optionally appending the given items.
+
+    /.addCommand __addIfCheck__ /.if 0 __gone__ /.append __cpy__ $0 /.else /.setLabel __gone__ 1
+    /.addCommand __remove__ /.$0 .forEach /.ifAreEqual $[value] $1 /.__addIfCheck__ $[value] /.else /.append __cpy__ $[value]
+    /.addCommand remove /.then /.emptyList __cpy__ /.then /.setLabel __gone__ 0 /.then /.__remove__ $0 $1 /.copy __cpy__ $0 $2...
+
+#### `/.insertAtIndex ARRAY VALUE INDEX [ITEMS...]` ####
+
+Inserts the given value at the given index in the array.
+
+    /.addCommand __insertAtIndex__ /.$0 .forEach /.then /.ifAreEqual $[index] $2 /.then /.setLabel __added__ 1 /.append __cpy__ $1 /.append __cpy__ $[value]
+    /.addCommand insertAtIndex /.then /.emptyList __cpy__ /.then /.setLabel __added__ 0 /.then /.__insertAtIndex__ $0 $1 $2 /.then /.if 0 ! __added__ /.append __cpy__ $1 /.copy __cpy__ $0 $3...
+
+#### `/.removeAtIndex ARRAY INDEX [ITEMS...]` ####
+
+Removes the value at the given index in the array.
+
+    /.addCommand __removeAtIndex__ /.$0 .forEach /.ifAreEqual $[index] $1 /.noop /.else /.append __cpy__ $[value]
+    /.addCommand removeAtIndex /.then /.emptyList __cpy__ /.then /.__removeAtIndex__ $0 $1 /.copy __cpy__ $0 $2...
 
 ## <a name="examples"></a> Examples ##
 
