@@ -21,6 +21,7 @@ Higher-order Commands
 * [forEach](#foreach)
 * [ifAreEqual](#equals)
 * [repeat](#repeat)
+* [once](#once)
 
 Misc. Commands
 
