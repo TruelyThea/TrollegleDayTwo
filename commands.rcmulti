@@ -46,15 +46,23 @@
 # /.fruit .say
 /.addCommand append /.copy $0 $0 $1...
 # /.addCommand append /.then /.addCommand __append__ /.initiateList $0 /.$0 .__append__ $1...
+/.forEach enQueue push /.addCommand $[value] /.append
 
 # /.shift newFruits
 # /.newFruits .tell
-/.addCommand shift /.then /.addCommand __s__ /.initiateList $0 $01... /.$0 .__s__ $1...
+/.addCommand __sf__ /.then /.initiateList __removed__ $0 /.noop
+/.addCommand shift /.then /.$0 .__sf__ /.then /.addCommand __s__ /.initiateList $0 $01... /.then /.$0 .__s__ /.__removed__ .forEach $1...
+/.addCommand deQueue /.shift
 
 # /.map fruit doubled $[value] !!!$[value]!!!
 # /.doubled .tell
 /.addCommand map /.then /.emptyList $1 /.$0 .forEach /.append $1 $2...
 /.forEach collect transform /.addCommand $[value] /.map
+
+# /.concatenate fruit newFruits allFruits
+/.addCommand concatenate /.then /.then /.copy $0 $2 /.addCommand __a__ /.append $2 /.$1 .__a__
+
+
 
 # /.length fruit /.tell $[value]
 # /.fruit .append strawberry
@@ -71,6 +79,9 @@
 # /.pluck fruit 2 /.tell The third fruit is $[value]!
 /.addCommand pluck /.$0 .forEach /.ifAreEqual $[index] $1 $2...
 
+/.addCommand __indexOf__ /.$0 .forEach /.ifAreEqual $1 $[value] /.if 0 ! __found__ /.then /.setLabel __found__ 1 /.initiateList __cur__ $[index]
+/.addCommand indexOf /.then /.then /.then /.initiateList __cur__ -1 /.setLabel __found__ 0 /.__indexOf__ $0 $1 /.__cur__ .forEach $2...
+
 # /.fruit .tell
 # /.remove fruit apple
 # /.fruit .tell
@@ -79,16 +90,18 @@
 /.addCommand remove /.then /.emptyList __cpy__ /.then /.setLabel __gone__ 0 /.then /.__remove__ $0 $1 /.copy __cpy__ $0 $2...
 
 # /.fruit .tell
-# /.insertAtIndex fruit kiwi 2
+# /.insertAtIndex fruit 2 kiwi
 # /.fruit .tell
-/.addCommand __insertAtIndex__ /.$0 .forEach /.then /.ifAreEqual $[index] $2 /.then /.setLabel __added__ 1 /.append __cpy__ $1 /.append __cpy__ $[value]
-/.addCommand insertAtIndex /.then /.emptyList __cpy__ /.then /.setLabel __added__ 0 /.then /.__insertAtIndex__ $0 $1 $2 /.then /.if 0 ! __added__ /.append __cpy__ $1 /.copy __cpy__ $0 $3...
+/.addCommand __insertAtIndex__ /.$0 .forEach /.then /.ifAreEqual $[index] $1 /.then /.setLabel __added__ 1 /.append __cpy__ $2 /.append __cpy__ $[value]
+/.addCommand insertAtIndex /.then /.emptyList __cpy__ /.then /.setLabel __added__ 0 /.then /.__insertAtIndex__ $0 $1 $2 /.then /.if 0 ! __added__ /.append __cpy__ $2 /.copy __cpy__ $0 $3...
 
 # /.fruit .tell
 # /.removeAtIndex fruit 2
 # /.fruit .tell
 /.addCommand __removeAtIndex__ /.$0 .forEach /.ifAreEqual $[index] $1 /.noop /.else /.append __cpy__ $[value]
 /.addCommand removeAtIndex /.then /.emptyList __cpy__ /.then /.__removeAtIndex__ $0 $1 /.copy __cpy__ $0 $2...
+
+/.addCommand setAtIndex /.then /.removeAtIndex $0 $1 /.insertAtIndex $0 $1 $2
 
 # /.initiateList admins NRP Ilse Thea tajweed29 Quinn
 # /.admins .withEach /tell $[nick]
@@ -97,7 +110,6 @@
 /.addCommand __filter__ /.$0 .forEach /.if $[value] $1... /.append __copy__ $[value]
 /.addCommand filter /.then /.emptyList __copy__ /.then /.__filter__ $0... /.copy __copy__ $0
 # /.then /.addCommand __set__ /.initiateList $0 /.__copy__ .__set__
-
 
 
 # BANS

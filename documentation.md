@@ -284,7 +284,7 @@ Calling `.forEach <command>`, `.withEach <command>`, `.simulate <command>`, `.te
 
 #### `/.empty NAME` ####
 
-Creates an empty array of the given values, or empties an existing array.
+Creates an empty array, or empties an existing array.
 
     /.addCommand emptyList /.addCommand $0 /$00 $01...
     /.forEach emptyArray empty clear /.addCommand $[value] /.emptyList
@@ -300,12 +300,21 @@ Copies the data of the given array into the given name, optionally appending the
 Appends the given items onto the array.
 
     /.addCommand append /.copy $0 $0 $1...
+    /.forEach enQueue push /.addCommand $[value] /.append
 
-#### `/.shift ARRAY [ITEMS...]` ####
+#### `/.shift ARRAY <command>` ####
 
-Removes the first element of the array, optionally appending the given items.
+Removes the first element of the array, and then calls the given command after filling `$[value]` with the removed element.
 
-    /.addCommand shift /.then /.addCommand __s__ /.initiateList $0 $01... /.$0 .__s__ $1...
+    /.addCommand __sf__ /.then /.initiateList __removed__ $0 /.noop
+    /.addCommand shift /.then /.$0 .__sf__ /.then /.addCommand __s__ /.initiateList $0 $01... /.then /.$0 .__s__ /.__removed__ .forEach $1...
+    /.addCommand deQueue /.shift
+    
+#### `/.concatenate ARRAY1 ARRAY2 NAME [ITEMS...]` ####
+
+Concatenates the given arrays, and stores the result in the given name.
+
+    /.addCommand concatenate /.then /.then /.copy $0 $2 /.addCommand __a__ /.append $2 /.$1 .__a__
 
 #### `/.map ARRAY NAME <expression>` ####
 
@@ -334,7 +343,14 @@ Performs the given command after `$[value]` is replaced by the value at the give
 
     /.addCommand pluck /.$0 .forEach /.ifAreEqual $[index] $1 $2...
 
-#### `/.remove ARRAY VALUE [ITEMS]` ####
+#### `/.indexOf ARRAY VALUE <command>` ####
+
+Fills `$[value]` with the first index of the given value in the array, or `-1` if it's not found in the array and then runs the command.
+
+    /.addCommand __indexOf__ /.$0 .forEach /.ifAreEqual $1 $[value] /.if 0 ! __found__ /.then /.setLabel __found__ 1 /.initiateList __cur__ $[index]
+    /.addCommand indexOf /.then /.then /.then /.initiateList __cur__ -1 /.setLabel __found__ 0 /.__indexOf__ $0 $1 /.__cur__ .forEach $2...
+
+#### `/.remove ARRAY VALUE [ITEMS...]` ####
 
 Removes the first occurance of the value in the array, optionally appending the given items.
 
@@ -342,12 +358,12 @@ Removes the first occurance of the value in the array, optionally appending the 
     /.addCommand __remove__ /.$0 .forEach /.ifAreEqual $[value] $1 /.__addIfCheck__ $[value] /.else /.append __cpy__ $[value]
     /.addCommand remove /.then /.emptyList __cpy__ /.then /.setLabel __gone__ 0 /.then /.__remove__ $0 $1 /.copy __cpy__ $0 $2...
 
-#### `/.insertAtIndex ARRAY VALUE INDEX [ITEMS...]` ####
+#### `/.insertAtIndex ARRAY INDEX VALUE [ITEMS...]` ####
 
 Inserts the given value at the given index in the array.
 
-    /.addCommand __insertAtIndex__ /.$0 .forEach /.then /.ifAreEqual $[index] $2 /.then /.setLabel __added__ 1 /.append __cpy__ $1 /.append __cpy__ $[value]
-    /.addCommand insertAtIndex /.then /.emptyList __cpy__ /.then /.setLabel __added__ 0 /.then /.__insertAtIndex__ $0 $1 $2 /.then /.if 0 ! __added__ /.append __cpy__ $1 /.copy __cpy__ $0 $3...
+    /.addCommand __insertAtIndex__ /.$0 .forEach /.then /.ifAreEqual $[index] $1 /.then /.setLabel __added__ 1 /.append __cpy__ $2 /.append __cpy__ $[value]
+    /.addCommand insertAtIndex /.then /.emptyList __cpy__ /.then /.setLabel __added__ 0 /.then /.__insertAtIndex__ $0 $1 $2 /.then /.if 0 ! __added__ /.append __cpy__ $2 /.copy __cpy__ $0 $3...
 
 #### `/.removeAtIndex ARRAY INDEX [ITEMS...]` ####
 
@@ -355,6 +371,12 @@ Removes the value at the given index in the array.
 
     /.addCommand __removeAtIndex__ /.$0 .forEach /.ifAreEqual $[index] $1 /.noop /.else /.append __cpy__ $[value]
     /.addCommand removeAtIndex /.then /.emptyList __cpy__ /.then /.__removeAtIndex__ $0 $1 /.copy __cpy__ $0 $2...
+    
+#### `/.setAtIndex ARRAY INDEX VALUE [ITEMS...]` ####
+
+Sets the value at the given index in the array.
+
+    /.addCommand setAtIndex /.then /.removeAtIndex $0 $1 /.insertAtIndex $0 $1 $2
 
 ## <a name="examples"></a> Examples ##
 
