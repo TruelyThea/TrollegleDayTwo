@@ -278,6 +278,8 @@ Cancels the interval at id if given, or all the intervals if not.
 
 The Array/List implementation is included in `commands.rcmuli` and is not written in Java. It is made possible by the expressiveness of `/.addCommand`. See `commands.rcmulti` for examples. Make sure to not override these names. There may be typos and bugs in this code.
 
+*TODO:* `/.pluck` and `/.shift` don't exactly work for length `0` arrays right now :(
+
 #### `/.Array NAME ITEMS...` ####
 
 Creates a (non-empty, by a quark) array of the given values.
@@ -348,9 +350,8 @@ Transforms the members of the given array into the form given by the expression.
 
 Performs the given command after `$[value]` is filled with the length of the array.
 
-    /.addCommand __setup__ /.then /.initiateList __cur__ 0 /.copy $0 __cpy__ end 
-    /.addCommand __length__ /.__cpy__ .forEach /.initiateList __cur__ $[index]
-    /.addCommand length /.then /.__setup__ $0 /.then /.__length__ /.__cur__ .forEach $1...
+    /.addCommand __length__ /.$0 .forEach end /.initiateList __len__ $[index]
+    /.addCommand length /.then /.__length__ $0 /.__len__ .forEach $1...
 
 #### `/.string ARRAY <command>` ####
 

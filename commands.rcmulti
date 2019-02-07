@@ -25,6 +25,8 @@
 
 # ARRAYS !!!!
 
+# TODO: shift, pluck for 0-length arrays
+
 # /.Array fruit mango pineapple banana
 # /.fruit .forEach /tell $[value]
 # /.fruit .tell
@@ -71,11 +73,8 @@
 # /.length fruit /.tell $[value]
 # /.fruit .append strawberry
 # /.length fruit /.tell There are $[value] fruits. $[value]!
-/.addCommand __setup__ /.then /.initiateList __cur__ 0 /.copy $0 __cpy__ end 
-# /.addCommand __cmd__ $1...
-/.addCommand __length__ /.__cpy__ .forEach /.initiateList __cur__ $[index]
-/.addCommand length /.then /.__setup__ $0 /.then /.__length__ /.__cur__ .forEach $1...
-# __cmd__ $[value]
+/.addCommand __length__ /.$0 .forEach end /.initiateList __len__ $[index]
+/.addCommand length /.then /.__length__ $0 /.__len__ .forEach $1...
 
 # /.string fruit /.tell The fruits are $[collection]. $[collection]!
 /.addCommand string /.then /.setLabel __done__ 0 /.$0 .forEach /.if 0 ! __done__ /.then /.setLabel __done__ 1 $1...
