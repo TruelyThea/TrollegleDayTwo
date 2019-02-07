@@ -46,7 +46,7 @@
 # /.fruit .say
 /.addCommand append /.copy $0 $0 $1...
 # /.addCommand append /.then /.addCommand __append__ /.initiateList $0 /.$0 .__append__ $1...
-/.forEach enQueue push /.addCommand $[value] /.append
+/.forEach enQueue push add /.addCommand $[value] /.append
 
 # /.shift newFruits
 # /.newFruits .tell
@@ -56,13 +56,17 @@
 
 # /.map fruit doubled $[value] !!!$[value]!!!
 # /.doubled .tell
-/.addCommand map /.then /.emptyList $1 /.$0 .forEach /.append $1 $2...
+/.addCommand __map__ /.$0 .forEach /.append __cpy__ $2...
+/.addCommand map /.then /.emptyList __cpy__ /.then /.__map__ $0... /.copy __cpy__ $1
 /.forEach collect transform /.addCommand $[value] /.map
 
 # /.concatenate fruit newFruits allFruits
 /.addCommand concatenate /.then /.then /.copy $0 $2 /.addCommand __a__ /.append $2 /.$1 .__a__
 
-
+/.addCommand __uniq__ /.indexOf __cpy__ $0 /.ifAreEqual -1 $[value] /.append __cpy__ $0
+/.addCommand __uni__ /.$0 .forEach /.__uniq__ $[value]
+/.addCommand uniq /.then /.then /.then /.emptyList __cpy__ /.__uni__ $0 /.copy __cpy__ $1 /.noop
+/.addCommand unique /.uniq
 
 # /.length fruit /.tell $[value]
 # /.fruit .append strawberry
@@ -79,7 +83,8 @@
 # /.pluck fruit 2 /.tell The third fruit is $[value]!
 /.addCommand pluck /.$0 .forEach /.ifAreEqual $[index] $1 $2...
 
-/.addCommand __indexOf__ /.$0 .forEach /.ifAreEqual $1 $[value] /.if 0 ! __found__ /.then /.setLabel __found__ 1 /.initiateList __cur__ $[index]
+# `not$1` is inserted for the trivial case where $0 is empty.
+/.addCommand __indexOf__ /.$0 .forEach not$1 /.ifAreEqual $1 $[value] /.if 0 ! __found__ /.then /.setLabel __found__ 1 /.initiateList __cur__ $[index]
 /.addCommand indexOf /.then /.then /.then /.initiateList __cur__ -1 /.setLabel __found__ 0 /.__indexOf__ $0 $1 /.__cur__ .forEach $2...
 
 # /.fruit .tell

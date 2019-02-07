@@ -271,7 +271,7 @@ Cancels the interval at id if given, or all the intervals if not.
 
 ## <a name="arrays"></a> Arrays ##
 
-The Array/List implementation is included in `commands.rcmuli` and is not written in Java. It is made possible by the expressiveness of `/.addCommand`. See `commands.rcmulti` for examples.
+The Array/List implementation is included in `commands.rcmuli` and is not written in Java. It is made possible by the expressiveness of `/.addCommand`. See `commands.rcmulti` for examples. Make sure to not override these names. There may be typos and bugs in this code.
 
 #### `/.Array NAME ITEMS...` ####
 
@@ -300,11 +300,11 @@ Copies the data of the given array into the given name, optionally appending the
 Appends the given items onto the array.
 
     /.addCommand append /.copy $0 $0 $1...
-    /.forEach enQueue push /.addCommand $[value] /.append
+    /.forEach enQueue push add /.addCommand $[value] /.append
 
 #### `/.shift ARRAY <command>` ####
 
-Removes the first element of the array, and then calls the given command after filling `$[value]` with the removed element.
+Removes the first element of the array, and then calls the given command after filling `$[value]` with the removed element. Pass `/.noop` to just remove the first element.
 
     /.addCommand __sf__ /.then /.initiateList __removed__ $0 /.noop
     /.addCommand shift /.then /.$0 .__sf__ /.then /.addCommand __s__ /.initiateList $0 $01... /.then /.$0 .__s__ /.__removed__ .forEach $1...
@@ -318,10 +318,21 @@ Concatenates the given arrays, and stores the result in the given name.
 
 #### `/.map ARRAY NAME <expression>` ####
 
-Transforms the members of the given array into the form given by the expression. The results are stored in the given name. The expression specifies the form of the resulting value(s). It may use any `$[value]` available in `.forEach`.
+Transforms the members of the given array into the form given by the expression. The results are stored in the given name. The expression specifies the form of the resulting value(s). It may use any `$[value]` available in `.forEach`. There cannot be a word starting with `/` in the expression, but you can escape such a word by using `$[/]`.
 
-    /.addCommand map /.then /.emptyList $1 /.$0 .forEach /.append $1 $2...
+    /.addCommand __map__ /.$0 .forEach /.append __cpy__ $2...
+    /.addCommand map /.then /.emptyList __cpy__ /.then /.__map__ $0... /.copy __cpy__ $1
     /.forEach collect transform /.addCommand $[value] /.map
+
+#### `/.uniq ARRAY NAME` ####
+
+Stores a copy of the given array with redundant values removed in name.
+    
+    /.addCommand __uniq__ /.indexOf __cpy__ $0 /.ifAreEqual -1 $[value] /.append __cpy__ $0
+    /.addCommand __uni__ /.$0 .forEach /.__uniq__ $[value]
+    /.addCommand uniq /.then /.then /.then /.emptyList __cpy__ /.__uni__ $0 /.copy __cpy__ $1 /.noop
+    /.addCommand unique /.uniq
+
 
 #### `/.length ARRAY <command>` ####
 
@@ -347,7 +358,8 @@ Performs the given command after `$[value]` is replaced by the value at the give
 
 Fills `$[value]` with the first index of the given value in the array, or `-1` if it's not found in the array and then runs the command.
 
-    /.addCommand __indexOf__ /.$0 .forEach /.ifAreEqual $1 $[value] /.if 0 ! __found__ /.then /.setLabel __found__ 1 /.initiateList __cur__ $[index]
+    # `not$1` is inserted for the trivial case where $0 is empty.
+    /.addCommand __indexOf__ /.$0 .forEach not$1 /.ifAreEqual $1 $[value] /.if 0 ! __found__ /.then /.setLabel __found__ 1 /.initiateList __cur__ $[index]
     /.addCommand indexOf /.then /.then /.then /.initiateList __cur__ -1 /.setLabel __found__ 0 /.__indexOf__ $0 $1 /.__cur__ .forEach $2...
 
 #### `/.remove ARRAY VALUE [ITEMS...]` ####

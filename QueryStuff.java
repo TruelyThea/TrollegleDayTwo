@@ -87,6 +87,7 @@ public class QueryStuff {
         
         // This is used to escape "$[text]" by $[$][text]
         values.put("$", p -> "$");
+        values.put("/", p -> "/");
         
         values.put("isAdmin", p -> "" + m.isAdmin(p));
         values.put("isVerboseAdmin", p -> "" + m.isVerboseAdmin(p));
@@ -121,6 +122,7 @@ public class QueryStuff {
           }
         });
         funs.put("$", (__, ___) -> "$");
+        funs.put("/", (__, ___) -> "/");
         funs.put("name", (p, args) -> {
           if (args.length == 0) return "";
           MultiUser u = m.userFromName(args[0]);
