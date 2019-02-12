@@ -87,6 +87,7 @@ public class QueryStuff {
         
         // This is used to escape "$[text]" by $[$][text]
         values.put("$", p -> "$");
+        values.put("/", p -> "/");
         
         values.put("isAdmin", p -> "" + m.isAdmin(p));
         values.put("isVerboseAdmin", p -> "" + m.isVerboseAdmin(p));
@@ -106,8 +107,32 @@ public class QueryStuff {
         values.put("isInformed", p -> "" + p.isInformed());
         values.put("isLurker", p -> "" + p.isLurker());
        
-        funs.put("choose", (p, args) -> args[(int) Math.floor(Math.random()*(double)args.length)]);
+        funs.put("choose", (p, args) -> args.length == 0 ? "" : args[(int) Math.floor(Math.random()*(double)args.length)]);
         funs.put("interpolate", (p, args) -> argsToString(0, args));
+        funs.put("pluck", (p, args) -> {
+          if (args.length == 0)
+            return "";
+          try {
+            int index = Integer.parseInt(args[0]) + 1;
+            if (index < 1 || index >= args.length)
+              return "[IllegalArgumentException]";
+            return args[index];
+          } catch (NumberFormatException e) {
+            return "[NotANumberException]";
+          }
+        });
+        funs.put("$", (__, ___) -> "$");
+        funs.put("/", (__, ___) -> "/");
+        funs.put("name", (p, args) -> {
+          if (args.length == 0) return "";
+          MultiUser u = m.userFromName(args[0]);
+          return u == null ? "[user " + args[0] + " couldn't be found]" : u.getNick();
+        });
+        funs.put("id", (p, args) -> {
+          if (args.length == 0) return "";
+          MultiUser u = m.userFromName(args[0]);
+          return u == null ? "[user " + args[0] + " couldn't be found]" : "" + u.getNumber();
+        });
     }
   
     public static int indexOfCommand(String[] args) {
@@ -159,6 +184,8 @@ public class QueryStuff {
         MultiUser recipient = m.userFromName(args[i]);
         if (recipient == null)
           target.schedTell("User " + args[i] + " couldn't be found.");
+        else if (recipient.isDummy())
+          target.schedTell("No /.simulate'ing console terminal calls :/");
         else
           perform(recipient, recipient, command);
       }
@@ -168,7 +195,19 @@ public class QueryStuff {
       // defaults to one USER and a one-token expression the command starts on the third arg
       int index = Math.max(indexOfCommand(args), 2);
       String[] expression = Arrays.copyOfRange(args, 1, index);
-      String command = argsToString(index, args);
+      
+      int i = index + 1;
+      for (i = index + 1; i < args.length; i++) {
+        if (args[i].toLowerCase().equals("/.else"))
+          break;
+      }
+      
+      // To un-escape /..else to /.else and /...else to /..else ...
+      Function<String, String> unescape = s -> "/" + s.substring(2);
+      String match = "(?i)(\\/\\.{2,}else)";
+      
+      String consequent = replace(argsToString(0, Arrays.copyOfRange(args, index, i)), match, unescape);
+      String otherwise = replace(argsToString(i + 1, args), match, unescape);
       
       try {
         Predicate<MultiUser> condition = labels.makeCondition(expression);
@@ -177,8 +216,10 @@ public class QueryStuff {
         if (recipient == null) {
           target.schedTell("User " + args[0] + " couldn't be found.");
         } else if (condition.test(recipient)) {
-          perform(target, recipient, command);
-        }
+          perform(target, recipient, consequent);
+        } else if (otherwise.length() > 0) {
+          perform(target, recipient, otherwise);
+        };
       } catch (IllegalArgumentException e) {
         target.schedTell(argsToString(0, expression) + " isn't a well formed expression: " + e.getMessage());
       }
@@ -188,7 +229,7 @@ public class QueryStuff {
       try {
         labels.put(args[0], Arrays.copyOfRange(args, 1, args.length));
         addedLabels.put(args[0], argsToString(1, args));
-        target.schedTell("Label Added.");
+        // target.schedTell("Label Added.");
       } catch (IllegalArgumentException e) {
         target.schedTell("There was a problem parsing your label: " + e.getMessage());
       }
@@ -225,7 +266,8 @@ public class QueryStuff {
                 if (fun != null) return fun.apply(recipient, Arrays.copyOfRange(args, 1, args.length));
               }
               
-              return "[" + property + " wasn't found]";
+              // the property couldn't be found! There is no warning like before to make placing /.with before a /.forEach (or a /.with inside a /.forEach command) possible
+              return "$[" + property + "]"; 
             }
             
             return "$"; // shorthand escape for "$"
@@ -258,5 +300,59 @@ public class QueryStuff {
                 if (target.test(u)) perform(u, u, commands);
             }
         }
+    }
+    
+    // This isn't really a query commands, so this file has become a misnomer.
+    public void each(String[] args, MultiUser target) {
+      int index = Math.max(indexOfCommand(args), 1);
+      String command = argsToString(index, args);
+      
+      Integer[] j = {0};
+      for (int i = 0; i < index; i++) {
+        j[0] = i;
+        String filled = replace(command, "\\$\\[(.+?)\\]", match -> {
+          String[] innerargs = match.split("\\s+");
+          if (innerargs.length > 0) {
+            String property = innerargs[0];
+            
+            BiFunction<MultiUser, String[], String> fun = funs.get(property);
+            if (fun != null) return fun.apply(target, Arrays.copyOfRange(innerargs, 1, innerargs.length));
+            
+            if (property.equals("index")) return "" + j[0];
+            if (property.equals("value")) return "" + args[j[0]];
+            if (property.equals("collection")) return argsToString(0, Arrays.copyOfRange(args, 0, index));
+            
+            return "$[" + property + "]";
+          }
+          
+          return "$";
+        });
+        
+        m.command(target, filled);
+      }
+    }
+    
+    public void ifAreEqual(String[] args, MultiUser target) {
+      // defaults to one USER and a one-token expression the command starts on the third arg
+      int index = 2;
+      
+      int i = index + 1;
+      for (i = index + 1; i < args.length; i++) {
+        if (args[i].toLowerCase().equals("/.else"))
+          break;
+      }
+      
+      // To un-escape /..else to /.else and /...else to /..else ...
+      Function<String, String> unescape = s -> "/" + s.substring(2);
+      String match = "(?i)(\\/\\.{2,}else)";
+      
+      String consequent = replace(argsToString(0, Arrays.copyOfRange(args, index, i)), match, unescape);
+      String otherwise = replace(argsToString(i + 1, args), match, unescape);
+      
+      if (args[0].equals(args[1])) {
+        m.command(target, consequent);
+      } else if (otherwise.length() > 0) {
+        m.command(target, otherwise);
+      }
     }
 }

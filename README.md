@@ -15,5 +15,5 @@ I want this project to be a public endeavour, so feel free to make a pull reques
 
 Since `/.addcommand` is so expressive now, a lot of commands could be added with only it (without Java), so I'll add a `.rcmulti` multi file to this repository for useful commands.
 
-The best way to learn about the commands, esp. the Query Commands, is reading the comments around them in `ExtendedAdminCommands.java`
+The best way to learn about the commands is by reading [`documentation.md`](./documentation.md)
 Usage of the commands and examples is given there.

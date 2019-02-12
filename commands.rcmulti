@@ -1,0 +1,137 @@
+/.addCommand 1s /.pausePulse 1s
+
+/.addCommand randp /.setInterval 15s /.sim $0 /n $[randomPony]
+
+# /.arrive|leave USER
+/.addCommand leave /.then /.sl $0 /.setLurk on $0
+/.addCommand arrive /.then /.setLurk off $0 /.sj $0
+
+# /.trouble|redeem USER
+/.addCommand trouble /.with 0 /.then /.a U oh! $[name $0] is causing trouble, they're going to be muted. /.mute $0
+/.addCommand redeem /.with 0 /.then /.a Wow! $[name $0] has been graciously redeemed, they're coming back to the chat! ^^ /.unmute $0
+
+/.addCommand fu /.flashUser
+
+# /.hugEach USERS... (up to 13 users)
+/.addCommand __laterDo__ /.with 0 /.defer $[pluck $1 0 6 12 18 24 30 36 42 48 54 60 66 72]s /$0 $2
+/.addCommand __doEach__ /.forEach $1... /.__laterDo__ $0 $[index] $[value]
+/.addCommand hugEach /.__doEach__ hug $0...
+/.addCommand patEach /.__doEach__ pat $0...
+/.addCommand stabEach /.__doEach__ stab $0...
+
+# /.once NAME <command>
+# Makes a command that only can be called once
+/.addCommand once /.then /.setLabel __notDone$0__ 1 /.addCommand $0 /.if 0 __notDone$0__ /.then /.setLabel __notDone$0__ 0 $1...
+
+# ARRAYS !!!!
+
+# TODO: shift, pluck for 0-length arrays
+
+# /.Array fruit mango pineapple banana
+# /.fruit .forEach /tell $[value]
+# /.fruit .tell
+/.addCommand initiateList /.addCommand $0 /$00 $1... $01...
+/.addCommand Array /.initiateList
+
+/.addCommand emptyList /.addCommand $0 /$00 $01...
+/.forEach emptyArray empty clear /.addCommand $[value] /.emptyList
+
+# /.copy fruit newFruits
+# /.newFruits .tell
+# /.append newFruits pear
+# /.newFruits .tell
+# /.fruit .tell
+/.addCommand copy /.then /.addCommand __c__ /.initiateList $1 /.$0 .__c__ $2...
+
+# /.append fruit apple orange
+# /.fruit .forEach /tell $[value]
+# /.fruit .say
+/.addCommand append /.copy $0 $0 $1...
+# /.addCommand append /.then /.addCommand __append__ /.initiateList $0 /.$0 .__append__ $1...
+/.forEach enQueue push add /.addCommand $[value] /.append
+
+# /.shift newFruits
+# /.newFruits .tell
+/.addCommand __sf__ /.then /.initiateList __removed__ $0 /.noop
+/.addCommand shift /.then /.$0 .__sf__ /.then /.addCommand __s__ /.initiateList $0 $01... /.then /.$0 .__s__ /.__removed__ .forEach $1...
+/.addCommand deQueue /.shift
+
+# /.map fruit doubled $[value] !!!$[value]!!!
+# /.doubled .tell
+/.addCommand __map__ /.$0 .forEach /.append __cpy__ $2...
+/.addCommand map /.then /.emptyList __cpy__ /.then /.__map__ $0... /.copy __cpy__ $1
+/.forEach collect transform /.addCommand $[value] /.map
+
+# /.concatenate fruit newFruits allFruits
+/.addCommand concatenate /.then /.then /.copy $0 $2 /.addCommand __a__ /.append $2 /.$1 .__a__
+
+/.addCommand __uniq__ /.indexOf __cpy__ $0 /.ifAreEqual -1 $[value] /.append __cpy__ $0
+/.addCommand __uni__ /.$0 .forEach /.__uniq__ $[value]
+/.addCommand uniq /.then /.then /.then /.emptyList __cpy__ /.__uni__ $0 /.copy __cpy__ $1 /.noop
+/.addCommand unique /.uniq
+
+# /.length fruit /.tell $[value]
+# /.fruit .append strawberry
+# /.length fruit /.tell There are $[value] fruits. $[value]!
+/.addCommand __length__ /.$0 .forEach end /.initiateList __len__ $[index]
+/.addCommand length /.then /.__length__ $0 /.__len__ .forEach $1...
+
+# /.string fruit /.tell The fruits are $[collection]. $[collection]!
+/.addCommand string /.then /.setLabel __done__ 0 /.$0 .forEach /.if 0 ! __done__ /.then /.setLabel __done__ 1 $1...
+
+# /.pluck fruit 2 /.tell The third fruit is $[value]!
+/.addCommand pluck /.$0 .forEach /.ifAreEqual $[index] $1 $2...
+
+# `not$1` is inserted for the trivial case where $0 is empty.
+/.addCommand __indexOf__ /.$0 .forEach not$1 /.ifAreEqual $1 $[value] /.if 0 ! __found__ /.then /.setLabel __found__ 1 /.initiateList __cur__ $[index]
+/.addCommand indexOf /.then /.then /.then /.initiateList __cur__ -1 /.setLabel __found__ 0 /.__indexOf__ $0 $1 /.__cur__ .forEach $2...
+
+# /.fruit .tell
+# /.remove fruit apple
+# /.fruit .tell
+/.addCommand __addIfCheck__ /.if 0 __gone__ /.append __cpy__ $0 /.else /.setLabel __gone__ 1
+/.addCommand __remove__ /.$0 .forEach /.ifAreEqual $[value] $1 /.__addIfCheck__ $[value] /.else /.append __cpy__ $[value]
+/.addCommand remove /.then /.emptyList __cpy__ /.then /.setLabel __gone__ 0 /.then /.__remove__ $0 $1 /.copy __cpy__ $0 $2...
+
+# /.fruit .tell
+# /.insertAtIndex fruit 2 kiwi
+# /.fruit .tell
+/.addCommand __insertAtIndex__ /.$0 .forEach /.then /.ifAreEqual $[index] $1 /.then /.setLabel __added__ 1 /.append __cpy__ $2 /.append __cpy__ $[value]
+/.addCommand insertAtIndex /.then /.emptyList __cpy__ /.then /.setLabel __added__ 0 /.then /.__insertAtIndex__ $0 $1 $2 /.then /.if 0 ! __added__ /.append __cpy__ $2 /.copy __cpy__ $0 $3...
+
+# /.fruit .tell
+# /.removeAtIndex fruit 2
+# /.fruit .tell
+/.addCommand __removeAtIndex__ /.$0 .forEach /.ifAreEqual $[index] $1 /.noop /.else /.append __cpy__ $[value]
+/.addCommand removeAtIndex /.then /.emptyList __cpy__ /.then /.__removeAtIndex__ $0 $1 /.copy __cpy__ $0 $2...
+
+/.addCommand setAtIndex /.then /.removeAtIndex $0 $1 /.insertAtIndex $0 $1 $2
+
+# /.initiateList admins NRP Ilse Thea tajweed29 Quinn
+# /.admins .withEach /tell $[nick]
+# /.filter admins && isVerbose doesShowNumbers
+# /.admins .withEach /tell $[nick]
+/.addCommand __filter__ /.$0 .forEach /.if $[value] $1... /.append __copy__ $[value]
+/.addCommand filter /.then /.emptyList __copy__ /.then /.__filter__ $0... /.copy __copy__ $0
+# /.then /.addCommand __set__ /.initiateList $0 /.__copy__ .__set__
+
+
+# BANS
+
+# /.allowSouls true|false
+/.addCommand allowSouls /.if 0 $0 /.ban ?off ?soft ?always ?forever (?i)\s*\/(spam|souls|s|spamon|invite|iq|ic|ii)(\s.*)? /.else /.ban ?soft ?always ?forever (?i)\s*\/(spam|souls|s|spamon|invite|iq|ic|ii)(\s.*)?
+
+# /.banKick true|false USERS...
+/.addCommand banKick /.with $1... /.if $[number] $0 /.ban ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)? /.else /.ban ?off ?soft ?always ?forever (?i)\s*(\/ban|\/kick|\/hurt)\s+($[nick]|0*$[number])(\s.*)?
+
+# PROXIES (PORT 9999 proxies seem to work the best)
+
+# /.singleProxy HOST PORT or /.singleProxy HOST:PORT
+# There's a problem with "/.addProxy HOST:" so now "/.addProxy $0 $1" will give a proper error response for "/.singleProxy HOST"
+/.addCommand singleProxy /.then /.addProxy $0 $1 /.proxyPriority 7 $0 $1
+
+# /.pr HOST
+/.addCommand pr /.singleProxy $0 9999
+
+# /.eachpr HOSTS...
+/.addCommand eachpr /.forEach $0... /.pr $[value]

@@ -25,8 +25,6 @@ import static anon.trollegle.Template.replace;
 
 // TODO: accept commands without slashes where it is possible
 // TODO: Temera's commands
-// TODO: /roll /ship /coin
-// TODO: foreach argument
 // TODO: override /.saveandkill and the inital --json load to include hug/stab count, commands, and labels
 
 public class ExtendedAdminCommands extends AdminCommands {
@@ -48,8 +46,8 @@ public class ExtendedAdminCommands extends AdminCommands {
           target.schedTell("Did you know that you search for commands whose usage or descriptions contain a phrase or for a command of a specific name?\r\n"
               + "Type \"/.help [phrase/command name]\" to get a shortened help response that only contains relevant commands.\r\n"
               + "Additionally, all of the new commands are marked with the writer's name, so you may type \"/.help Thea\" to get all of my commands.\r\n"
-              + "The best way to learn about the new commands is through the source code, which describes the uses of the commands and shows example usage.\r\n"
-              + "New Admin Commands (see especially the Query Commands section) https://github.com/TruelyThea/TrollegleDayTwo/blob/master/ExtendedAdminCommands.java\r\n"
+              + "The best way to learn about the new commands is reading the documentation, which describes the uses of the commands and shows example usage.\r\n"
+              + "Documentation: https://github.com/TruelyThea/TrollegleDayTwo/blob/master/documentation.md\r\n"
               + "I hope you enjoy using these new features! ^^\r\n"
               + "~Thea");
         });
@@ -99,22 +97,24 @@ public class ExtendedAdminCommands extends AdminCommands {
                     
                     for (int i = 0; i < times; i++) m.command(target, commands);
                     
-                    target.schedTell("Completed the repetition");
-                }, "rep");
+                    // target.schedTell("Completed the repetition");
+                }, "rep", "times");
         
-        addCommand("addcommand", "addcommand COMMAND [command]", "Makes /!COMMAND a shorthand for [command]. [command] may be an entire command, an initial segment for args to be appended to, or allow the first few args to fill where $0 $1 $2, ... appear. Escape $d... though $0d... (Thea)", 2,
+        addCommand("addcommand", "addcommand COMMAND [command]", "Makes /!COMMAND a shorthand for [command]. [command] may be an entire command, an initial segment for args to be appended to, or allow the first few args to fill where $0 $1 $2, ... appear. Escape $d... though $0d.... Additionally you may use ... after an arg like '$0...' to get all the arguments from that one (rest operator). (Thea)", 2,
         //"Makes the initial segment of a command available for easy calling. This may be the entire command or may be a proper initial segment that accepts arguments. Use the /. or /! notation. (Thea)", 2,
-                (args, target) -> {
+                (args, target) -> { // This function is really ugly right now.
                     final String command = argsToString(1, args);
                     String name = args[0].toLowerCase(Locale.ROOT);
-                    String regex = "\\$(\\d+)";
+                    String regex = "\\$(\\d+(\\.\\.\\.)?)";
                     
                     Pattern p = Pattern.compile(regex);
                     Matcher match = p.matcher(command);
                     int max = 0;
                     while (match.find())
-                      if (!match.group(1).startsWith("0") || match.group(1).length() == 1)
-                        max = Math.max(max, Integer.parseInt(match.group(1)) + 1);
+                      if (!match.group(1).startsWith("0") ||  match.group(1).length() == (match.group(2) == null ? 1 : 4)) {
+                        if (match.group(2) != null) max = Integer.MAX_VALUE;
+                        else max = Math.max(max, Integer.parseInt(match.group(1)) + 1);
+                      }
                     final int from = max;
                     
                     if ((commands.get(name) == null && aliases.get(name) == null) || addedCommands.get(name) != null) {
@@ -126,38 +126,59 @@ public class ExtendedAdminCommands extends AdminCommands {
                         
                         String filledCommand = replace(command, regex, mtch -> {
                           // escape $d... through $0d...
-                          if (mtch.length() > 1 && mtch.startsWith("0")) return "$" + mtch.substring(1);
+                          if (mtch.length() > (mtch.endsWith("...") ? 4 : 1) && mtch.startsWith("0")) return "$" + mtch.substring(1);
                           
+                          if (mtch.endsWith("...")) {
+                            // the negative shorthand confuses me sometimes, so I'll just write long hand
+                            int index = Integer.parseInt(mtch.substring(0, mtch.length() - 3)); 
+                            return index < innerargs.length ? argsToString(index, innerargs) : "";
+                          }
                           int index = Integer.parseInt(mtch);
                           return index < innerargs.length ? innerargs[index] : "";
                         });
                         
                         m.command(innertarget, filledCommand + " " + argsToString(from, innerargs));
                       });
-                      target.schedTell("Command added.");
+                      // target.schedTell("Command added.");
                     } else
                       target.schedTell("There is already a command with that name.");
                 }, "command", "setcommand");
                 
         addCommand("commands", "commands", "Lists all of the commands that admins have added. These commands will never show up in /!help searches. (Thea)", 0,
                 (args, target) -> {
-                    listHashTable(target, addedCommands, "command");
+                    Predicate<String> predicate = null;
+                    if (args.length > 0) {
+                      String filter = argsToString(0, args);
+                      predicate = s -> s.contains(filter);
+                    }
+                    listHashTable(target, addedCommands, "command", predicate);
                 }, "listcommands");
         
         // This is useful in any of my higher-order commands that take other commands as arguments
         // because you might want to perform more than one command on interval or perform more than one command with selected users
         // This command may be stacked to run several commands at once: /.then COMMAND /.then COMMAND /.then COMMAND COMMAND
-        addCommand("then", "then [command] [command]", "Performs both commands. The second command starts at the first argument after the first argument that begins with /. (Thea)", 2,
+        // Limitations: no 'textual' /word's in the first command, no /.if + /.else in first command, no user-added commands that take a command in the first command.
+        addCommand("then", "then [command] [command]", "Performs both commands. (Thea)", 2,
                 (args, target) -> {
-                    int index = 1;
-                    for (index = 1; index < args.length; index++)
-                      if (args[index].startsWith("/"))
-                        break;
-                    if (index == args.length)
-                      index = 1;
+                    int index = indexOfSecondCommand(args);
                     m.command(target, String.join(" ", Arrays.copyOfRange(args, 0, index)));
                     m.command(target, argsToString(index, args));
                 }, "andthen");
+                
+        addCommand("foreach", "forEach LIST... [command]", "Preforms the command on each element of the list. Fills the command with $[value]'s like a query command, but only accepts the $[function args...] values and the special values: index, value, collection. (Thea)", 2,
+                (args, target) -> {
+                    query.each(args, target);
+                }, "each");
+                
+      addCommand("ifareequal", "ifAreEqual WORD1 WORD2 <command> [/.else <command>]", "Performs the command if the words are equal. (Thea)", 2,
+                (args, target) -> {
+                    query.ifAreEqual(args, target);
+                }, "ifequals", "equals");
+                
+        addCommand("noop", "noop ARGS...", "Ignores the arguments (Thea)", 0,
+                (args, target) -> {
+                    return;
+                });
         
         // The following three commands are duplicated from ExtendedUserBehavior.java to allow both the /!command and /command notations.
         // The comments are presented only here.
@@ -203,7 +224,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         addCommand("allwho", "allwho PREDICATE [command]", "Does the command with all users who satisfy the PREDICATE. In [command], use $[value] to get a value of the user. (Thea)", 2,
                 (args, target) -> {
                   query.allWho(args, target);
-                }, "all", "filter", "withall", "withallwho");
+                }, "all", "withall", "withallwho");
         // Example: /.allwho || isVerbose isAdmin /.apm $[number] you either are an admin or want to be an admin ^^
         // Example: /.allwho ALL /.apm $[number] $[nick], your pat count is currently $[patCount].
         
@@ -218,7 +239,7 @@ public class ExtendedAdminCommands extends AdminCommands {
         addCommand("with", "with USER... [command]", "Does the command with every USER; you are still the target (caller). In [command], use $[value] to get a value of the USER. (Thea)", 2,
                 (args, target) -> {
                   query.with(args, target);
-                });
+                }, "witheach");
         // Example: /.with NRP CL Bibi PUB 0 /.apm $[number] Your pat count is currently at $[patCount] and your hug count is currently at $[hugCount]
         // Example: /.with 0 /say The admin currently has only $[patCount] pats.
         
@@ -226,10 +247,10 @@ public class ExtendedAdminCommands extends AdminCommands {
         // This command will have the caller do the command if the USER satisfies the PREDICATE
         // This command also can be used to see whether a USER exists, with /.if USER 1 /tell yes
         // also replaces $[value]'s with the selected user's properties.
-        addCommand("if", "if USER PREDICATE [command]", "Does the command if the USER satisfies the PREDICATE. (Thea)", 3,
+        addCommand("if", "if USER PREDICATE <command> [/.else <command>]", "Does the command if the USER exists and satisfies the PREDICATE. Optionally add an /.else after the command to do when the PREDICATE doesn't hold (but the user exists), and possible stacking: /.if USER PRED command /.else /.if USER PRED command /.else command. (Thea)", 3,
                 (args, target) -> {
                   query.ifThen(args, target);
-                }, "onlyif", "ifthen", "withif");
+                }, "onlyif", "ifthen", "withif", "ifelse");
         // Example: /.if NRP ! isAdmin /.then /.d NRP /.g Hello ^^
         // Example: 
         //     /.setLabel doGreet true
@@ -259,7 +280,12 @@ public class ExtendedAdminCommands extends AdminCommands {
                 
         addCommand("labels", "labels", "Lists all of the labels that admins have added. (Thea)", 0,
                 (args, target) -> {
-                    listHashTable(target, query.getLabels(), "label");
+                    Predicate<String> predicate = null;
+                    if (args.length > 0) {
+                      String filter = argsToString(0, args);
+                      predicate = s -> s.contains(filter);
+                    }
+                    listHashTable(target, query.getLabels(), "label", predicate);
                 }, "listlabels");
         
         addCommand("labelhelp", "labelhelp", "spells out the documentation for labels. (Thea)", 0,
@@ -293,15 +319,48 @@ public class ExtendedAdminCommands extends AdminCommands {
         sanityCheck();
     }
     
-    private void listHashTable(MultiUser target, Hashtable<String, String> hash, String type) {
+    private void listHashTable(MultiUser target, Hashtable<String, String> hash, String type, Predicate<String> predicate) {
+        if (predicate == null) predicate = s -> true;
         Enumeration<String> keys = hash.keys();
-        String result = "Here are your added " + type + "s:", key;
+        String result = "Here are your added " + type + "s:", key, value;
         while (keys.hasMoreElements()) {
           key = keys.nextElement();
-          result += "\r\n" + key + ": " + hash.get(key);
+          value = hash.get(key);
+          if (predicate.test(value) || predicate.test(key))
+            result += "\r\n" + key + ": " + value;
         }
         result += "\r\n--end--";
         target.schedTell(result);
+    }
+    
+    private int indexOfSecondCommand(String[] args) {
+      ArrayList<Command> oneArys = new ArrayList<Command>();
+      String[] oneAryNames = {"defer", "interval", "repeat", "addcommand", "foreach", "allwho", "with", "simulate", "if", "ifareequal"};
+      for (int i = 0; i < oneAryNames.length; i++)
+        oneArys.add(commands.get(oneAryNames[i]));
+      
+      if (!args[0].startsWith("/"))
+        return 1;
+      
+      int count = 0, index = 0;
+      for (index = 0; index < args.length; index++) {
+          String word = args[index];
+          if (word.startsWith("/")) {
+            if (count == -1) return index;
+            if (word.startsWith("/.")) {
+              String command = word.substring(2).toLowerCase();
+              if (oneArys.contains(commands.get(command)) || oneArys.contains(aliases.get(command)) || command.equals("else"))
+                count += 1 - 1;
+              else if (command.equals("then") || command.equals("andthen"))
+                count += 2 - 1;
+              else
+                count += 0 - 1;
+            } else
+              count += 0 - 1;
+          }
+      }
+      
+      return 1;
     }
     
 }
