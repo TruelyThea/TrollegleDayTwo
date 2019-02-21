@@ -125,6 +125,7 @@ public class ExtendedCaptchaMulti extends CaptchaMulti {
         relay("normal", source, message);
         if (source.isMuted())
             relay("special", source, message, "mute", to -> isVerboseAdmin(to) && !to.isMuted());
+        source.schedTell("just now: [" + getDisplayNick(source, source) + "] " + message);
     }
   
     public static class ExtendedCaptchaUser extends CaptchaUser {

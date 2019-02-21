@@ -1,5 +1,10 @@
 package anon.trollegle;
 
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import static anon.trollegle.Util.tn;
 
 public class ExtendedUserBehaviour extends UserBehaviour {
@@ -10,6 +15,8 @@ public class ExtendedUserBehaviour extends UserBehaviour {
 
     protected void addAll() {
         super.addAll();
+
+        Pattern rollPattern = Pattern.compile("(?i)^(\\d+)d(\\d+)$");
         
         ExtendedCaptchaMulti c = (ExtendedCaptchaMulti) m;
         addMyCommand("hug", 1, (args, target) -> c.hugUser(target, args[0]), "Hug another user");
@@ -21,11 +28,16 @@ public class ExtendedUserBehaviour extends UserBehaviour {
         addMyCommand("flip", 0, (args, target) -> c.flip(target), "Flip a coin");
         addMyCommand("roll", new BodyCommand(null, "Roll COUNT INT-sided dice", 1,
             (args, target) -> {
-                if (args.length == 1)
+            if (args.length == 1){
+                Matcher rollMatcher = rollPattern.matcher(args[0]);
+                if (rollMatcher.find())
+                    c.roll(target, rollMatcher.group(2), rollMatcher.group(1));
+                else    
                     c.roll(target, args[0], "1");
-                else
-                    c.roll(target, args[0], args[1]);
-            }),
+            } else {
+                c.roll(target, args[0], args[1]);
+            }
+        }),
             null, "INT COUNT");
         addMyCommand("ship", new BodyCommand(null, "Ship two other users", 2, 
             (args, target) -> c.ship(target, args[0], args[1])),
