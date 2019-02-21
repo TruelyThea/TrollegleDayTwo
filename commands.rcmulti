@@ -11,6 +11,7 @@
 /.addCommand redeem /.with 0 /.then /.a Wow! $[name $0] has been graciously redeemed, they're coming back to the chat! ^^ /.unmute $0
 
 /.addCommand fu /.flashUser
+/.command rmmd /.rmproxies marked dirty
 
 # /.hugEach USERS... (up to 13 users)
 /.addCommand __laterDo__ /.with 0 /.defer $[pluck $1 0 6 12 18 24 30 36 42 48 54 60 66 72]s /$0 $2

@@ -76,8 +76,8 @@ public class TimerStuff {
         
         final int id = timers.indexOf(timer);
         
-        if (time > minTellTime) // Why tell if it's done too quickly to react?
-          target.schedTell("The id of the scheduled " + type + " is " + id);
+        // if (time > minTellTime) // Why tell if it's done too quickly to react?
+          // target.schedTell("The id of the scheduled " + type + " is " + id);
           
         commandTable.put(id, "(" + args[0] + ") " + commands);
         
@@ -87,7 +87,7 @@ public class TimerStuff {
             m.command(target, commands);
             if (type.equals("defer")) {
               timers.set(id, null);
-              target.schedTell("Defer completed."); // TODO: uppercase first letter
+              // target.schedTell("Defer completed."); // TODO: uppercase first letter
             }
           }
         };
@@ -106,7 +106,7 @@ public class TimerStuff {
             if (timer != null) timer.cancel();
             timers.set(i, null);
           }
-          target.schedTell("canceled all scheduled " + type + ".");
+          // target.schedTell("canceled all scheduled " + type + ".");
           return;
         }
         
@@ -115,7 +115,7 @@ public class TimerStuff {
           Timer timer = timers.get(id);
           if (timer != null) timer.cancel();
           timers.set(id, null);
-          target.schedTell("canceled the " + type + " " + id);
+          // target.schedTell("canceled the " + type + " " + id);
         } catch (NumberFormatException e) {
           target.schedTell("invalid integer argument for id: not an integer");
         } catch (IndexOutOfBoundsException e) {

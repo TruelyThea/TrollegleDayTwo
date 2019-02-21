@@ -276,9 +276,17 @@ Cancels the interval at id if given, or all the intervals if not.
 
 ## <a name="arrays"></a> Arrays ##
 
-The Array/List implementation is included in `commands.rcmuli` and is not written in Java. It is made possible by the expressiveness of `/.addCommand`. See `commands.rcmulti` for examples. Make sure to not override these names. There may be typos and bugs in this code.
+The Array/List implementation is included in `commands.rcmuli` and is not written in Java. It is made possible by the expressiveness of `/.addCommand`. See `commands.rcmulti` for example usage of arrays. 
 
-*TODO:* `/.pluck` and `/.shift` don't exactly work for length `0` arrays right now :(
+This array implementation has some limitations: elements cannot have spaces, and most methods assume that they do not start with a `/`. 
+
+However, there are plenty of useful things that arrays can store: lists of: user names/ids, proxies, command names, label names, interval/defer ids, other array names. The limitation unfortunately means: no arrays of unwrapped messages or bans. 
+
+Perhaps a linked list implementation would get around the limitations? (In fact I think it could.) That would probably fill the internal list of command names with tons of internal commands, though, something like: `__0__: /.then /.__do0__ $0 /.__1__ $1`... I would love to see someones implementation of this or any other solution. (Of course since counting isn't provided for free, the command names might not involve numbers.)
+
+Perhaps this shouldn't be implemented in the meta language, but *should* be written in Java. It has it's uses though, I don't think it's useful enough to justify `addCommand()`ing more commands, besides it's a good exercise into how to use `/.addCommand` and other hard-coded commands.
+
+Make sure to not override these method names. There may be typos and bugs in this code. To swarm the environment with the Array methods, call `/.loadrc [locationOf]/commands.rcmulti`.
 
 #### `/.Array NAME ITEMS...` ####
 

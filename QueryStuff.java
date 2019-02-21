@@ -133,6 +133,17 @@ public class QueryStuff {
           MultiUser u = m.userFromName(args[0]);
           return u == null ? "[user " + args[0] + " couldn't be found]" : "" + u.getNumber();
         });
+        
+        funs.put("sha1", (p, args) -> {
+          String str = "";
+          for (int i = 0; i < args.length; i++) {
+            str += args[i];
+            if (i < args.length - 1) str += " ";
+          }
+          return anon.trollegle.Util.sha1(str);
+        });
+        values.put("ID", p -> "" + p.getID());
+        values.put("randID", p -> "" + p.getRandid());
     }
   
     public static int indexOfCommand(String[] args) {
@@ -304,7 +315,7 @@ public class QueryStuff {
     
     // This isn't really a query commands, so this file has become a misnomer.
     public void each(String[] args, MultiUser target) {
-      int index = Math.max(indexOfCommand(args), 1);
+      int index = Math.max(indexOfCommand(args), 0);
       String command = argsToString(index, args);
       
       Integer[] j = {0};

@@ -49,7 +49,8 @@ public class ExtendedAdminCommands extends AdminCommands {
               + "The best way to learn about the new commands is reading the documentation, which describes the uses of the commands and shows example usage.\r\n"
               + "Documentation: https://github.com/TruelyThea/TrollegleDayTwo/blob/master/documentation.md\r\n"
               + "I hope you enjoy using these new features! ^^\r\n"
-              + "~Thea");
+              + "~Thea"
+              + "\r\n (version: 0.1.0)");
         });
                 
         addCommand("defer", "defer TIME [command]", "Waits TIME before executing [command]. (Thea)", 2,
@@ -165,7 +166,7 @@ public class ExtendedAdminCommands extends AdminCommands {
                     m.command(target, argsToString(index, args));
                 }, "andthen");
                 
-        addCommand("foreach", "forEach LIST... [command]", "Preforms the command on each element of the list. Fills the command with $[value]'s like a query command, but only accepts the $[function args...] values and the special values: index, value, collection. (Thea)", 2,
+        addCommand("foreach", "forEach LIST... [command]", "Preforms the command on each element of the list. Fills the command with $[value]'s like a query command, but only accepts the $[function args...] values and the special values: index, value, collection. (Thea)", 1,
                 (args, target) -> {
                     query.each(args, target);
                 }, "each");
