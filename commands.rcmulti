@@ -12,6 +12,7 @@
 
 /.addCommand fu /.flashUser
 /.command rmmd /.rmproxies marked dirty
+/.addcommand rmAllTopics /.then /.topics _ /.rmtopics _
 
 # /.hugEach USERS... (up to 13 users)
 /.addCommand __laterDo__ /.with 0 /.defer $[pluck $1 0 6 12 18 24 30 36 42 48 54 60 66 72]s /$0 $2
@@ -136,3 +137,31 @@
 
 # /.eachpr HOSTS...
 /.addCommand eachpr /.forEach $0... /.pr $[value]
+
+
+# Just to show this is possible
+
+/.addCommand __buildNamesArray__ /.then /.empty __names__ /.allWho true /.append __names__ $[nick]
+
+/.addCommand __tryUntilUnique__ /.with 0 /.ifAreEqual $[name $0] $0 /.__tryUntilUnique__ _$0 /.else /.array __name__ $0
+
+/.addCommand __setName__ /.__name__ .forEach /.sn $[value]
+
+/.addCommand __removeExisting__ /.allWho true /.remove __names__ $[nick]
+
+/.addCommand __resetNameAndDo__ /.__names__ .forEach /.then /.sn $[value] /.with $[value] $0...
+
+# like /.with, except no user arguments and $[]'s are filled with the caller's properties, also $[value] $[collection] and $[index] are unfortunately filled
+/.addCommand withSelf /.then /.then /.then /.then /.__buildNamesArray__ /.__tryUntilUnique__ /.__setName__ /.__removeExisting__ /.__resetNameAndDo__ $0...
+
+/.empty __admins__
+
+# un-deifies everyone except you and the console terminal
+/.addCommand undeifyEveryone /.then /.__storeAdminNames__ /.withSelf /.then /.__udEveryone__ $[number] /.noop
+
+/.addCommand __storeAdminNames__ /.then /.empty __admins__ /.allWho && isAdmin ! isDummy /.append __admins__ $[number]
+
+/.addCommand __udEveryone__ /.allWho && isAdmin ! isDummy /.ifAreEqual $0 $[number] /.noop /.else /.ud $[number]
+
+# re-deifies everyone who was just un-deified by /.undeifyEveyone
+/.addCommand redeifyEveryone /.__admins__ .forEach /.d $[value]
