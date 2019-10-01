@@ -96,6 +96,7 @@ function userscript() {
       return {action: async () => {
         state.isTrollegle = true;
         await GM.getValue("autoCaptchaEnabled") && say("/cap");
+        await GM.getValue("colorEnabled") && coloredMain();
         updateLurk();
       }};
     
@@ -307,7 +308,7 @@ function userscript() {
 
   async function editor(callback) {
     var win, list, lurkModeList, lurkRateInput, lurkTextInput, 
-      captchaCheck, autoCaptchaCheck, loginCheck, save, cancel;
+      captchaCheck, autoCaptchaCheck, colorCheck, loginCheck, save, cancel;
     win = E("form", {id: "prefbox"}, [
       E("div", {}, [
         E("label", {"for": "lurkMode"}, "Lurk: "),
@@ -332,6 +333,10 @@ function userscript() {
         E("label", {"for": "autoCaptcha"}, "Ask room for captchas upon joining"),
       ]),
       E("div", {}, [
+	colorCheck = E("input", {id: "color", type: "checkbox"}),
+	E("label", {"for": "color"}, "Colorize room"),
+      ]),
+      E("div", {}, [
         loginCheck = E("input", {id: "enabled", type: "checkbox"}),
         E("label", {"for": "enabled"}, "Enable admin login with credentials:"),
       ]),
@@ -346,6 +351,7 @@ function userscript() {
     lurkModeList.value = await lurkMode();
     lurkRateInput.value = await lurkRate();
     lurkTextInput.value = await lurkText();
+    colorCheck.checked = await GM.getValue("colorEnabled");
     captchaCheck.checked = !await GM.getValue("captchaDisabled");
     autoCaptchaCheck.checked = await GM.getValue("autoCaptchaEnabled");
     loginCheck.checked = !await GM.getValue("disabled");
@@ -369,6 +375,7 @@ function userscript() {
         showCaptcha();
       GM.setValue("captchaDisabled", !captchaCheck.checked && "true" || "");
       GM.setValue("autoCaptchaEnabled", autoCaptchaCheck.checked && "true" || "");
+      GM.setValue("colorEnabled", colorCheck.checked && "true" || "");
       GM.setValue("disabled", !loginCheck.checked && "true" || "");
       GM.setValue("lurkText", state.lurkText = lurkTextInput.value);
       await GM.setValue("lurkRate", state.lurkRate = Number(lurkRateInput.value));
@@ -471,6 +478,48 @@ function userscript() {
       window.COMETBackend.prototype.disconnect = wrap(newDisconnect);
     }
   }
+
+// Code for colorizing
+// new message listener and color assignment
+function coloredMain() {
+    'use strict';
+    say("/duids");
+    var msges = document.getElementsByClassName('logbox')[0].firstChild;
+    var background = document.getElementsByClassName('logbox')[0];
+    background.style.background = `#1e394c`;
+    background.style.fontFamily = `monospace`;
+    background.style.fontSize = "13pt";
+    var idRegex = /.*?\((\d+)\)/gm;
+
+    function change(obj){
+        var idstr = idRegex.exec(obj.innerHTML);
+        if (idstr != null){
+            var col = parseInt(idstr[1]) * 20;
+            obj.style.color = `hsl(${col},100%,60%)`;
+        }else{
+            obj.style.color = `#ffffff`;
+        }
+    }
+
+    var observrOptions = {
+        childList: true
+    }
+
+    var observr = new MutationObserver(mutationList => {
+        // Loop over the mutations
+        mutationList.forEach(mutation => {
+            // For added nodes apply the color function
+            mutation.addedNodes.forEach(node => {
+                change(node)
+                //console.log(node)
+            })
+        })
+    })
+
+    observr.observe(msges, observrOptions);
+}
+
+
   begin();
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
