@@ -46,7 +46,6 @@ public class QueryStuff {
         labels.put("isAccepted", p -> p.isAccepted());
         labels.put("isMuted", p -> p.isMuted());
         labels.put("isVerbose", p -> p.isVerbose());
-        labels.put("isFlash", p -> p.isFlash());
         labels.put("isBot", p -> p.isBot());
         labels.put("doesShowNumbers", p -> p.showsNumbers());
         labels.put("isInformed", p -> p.isInformed());
@@ -101,7 +100,6 @@ public class QueryStuff {
         values.put("isAccepted", p -> "" + p.isAccepted());
         values.put("isMuted", p -> "" + p.isMuted());
         values.put("isVerbose", p -> "" + p.isVerbose());
-        values.put("isFlash", p -> "" + p.isFlash());
         values.put("isBot", p -> "" + p.isBot());
         values.put("doesShowNumbers", p -> "" + p.showsNumbers());
         values.put("isInformed", p -> "" + p.isInformed());
